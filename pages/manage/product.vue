@@ -141,17 +141,17 @@
             <th @click="sortBy('condition')" class="cursor-pointer">
               ສະພາບ <v-icon>{{ getSortIcon('condition') }}</v-icon>
             </th>
-            <th class="text-center">Option</th>
+            <th class="text-center actions-header">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in paginatedProducts" :key="item.id">
-            <td>{{ (page - 1) * itemsPerPage + index + 1 }}</td>
-            <td>{{ item.code }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.category }}</td>
-            <td>{{ getWeightText(item.weight) }}</td>
-            <td>{{ formatCurrency(item.estimatePrice) }}</td>
+          <tr v-for="(item, index) in paginatedProducts" :key="item.id" class="table-row">
+            <td class="text-center">{{ (page - 1) * itemsPerPage + index + 1 }}</td>
+            <td class="text-overflow">{{ item.code }}</td>
+            <td class="text-overflow">{{ item.name }}</td>
+            <td class="text-overflow">{{ item.category }}</td>
+            <td class="text-overflow">{{ getWeightText(item.weight) }}</td>
+            <td class="text-overflow price-cell">{{ formatCurrency(item.estimatePrice) }}</td>
             <td>
             <v-chip :color="getStatusColor(item.status)" size="small" variant="flat">
                 {{ item.status }}
@@ -162,16 +162,56 @@
                 {{ getConditionText(item.condition) }}
               </v-chip>
             </td>
-            <td class="text-center">
-              <v-btn icon variant="text" density="comfortable" @click="onEdit(item)">
-                <v-img src="/icons/Edit.png" width="20" height="20" />
-              </v-btn>
-              <v-btn icon variant="text" density="comfortable" @click="onDelete(item)">
-                <v-img src="/icons/Delete.png" width="20" height="20" />
-              </v-btn>
-              <v-btn v-if="item.status === 'REPURCHASED' || item.status === 'DAMAGED' || item.condition === 'DAMAGED'" icon variant="text" density="comfortable" @click="markAsAvailable(item)">
-                <v-icon color="green">mdi-check-circle</v-icon>
-              </v-btn>
+            <td class="text-center actions-cell">
+              <div class="action-buttons">
+                <v-tooltip text="ແກ້ໄຂ" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      @click="onEdit(item)"
+                      class="action-btn"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                
+                <v-tooltip text="ລຶບ" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="error"
+                      @click="onDelete(item)"
+                      class="action-btn"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                
+                <v-tooltip v-if="item.status === 'REPURCHASED' || item.status === 'DAMAGED' || item.condition === 'DAMAGED'" text="ຕັ້ງເປັນພ້ອມຂາຍ" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="success"
+                      @click="markAsAvailable(item)"
+                      class="action-btn"
+                    >
+                      <v-icon>mdi-check-circle</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -971,6 +1011,89 @@ const averagePrice = computed(() => {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Actions Header */
+.actions-header {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Table Cell Text Overflow */
+.text-overflow {
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-cell {
+  max-width: 150px;
+  text-align: right;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.actions-cell {
+  min-width: 120px;
+  width: 120px;
+}
+
+/* Table Row Styling */
+.table-row {
+  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.table-row:hover {
+  background: linear-gradient(135deg, rgba(54, 90, 118, 0.03) 0%, rgba(54, 90, 118, 0.06) 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Table Styling */
+.modern-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.modern-table thead th {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  padding: 16px 20px !important;
+  border: none !important;
+  font-size: 0.95rem !important;
+  text-transform: none !important;
+  letter-spacing: 0.5px !important;
+}
+
+.modern-table tbody td {
+  padding: 16px 20px !important;
+  font-size: 0.95rem !important;
+  color: #2c3e50 !important;
+  border: none !important;
+  vertical-align: middle !important;
+}
+
 /* Modern Dialog Styles */
 :deep(.modern-dialog) {
   border-radius: 16px;
@@ -1099,55 +1222,28 @@ const averagePrice = computed(() => {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-.v-theme--dark .modern-table :deep(tbody td) {
+/* Dark Mode Table */
+.v-theme--dark .modern-table {
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .modern-table tbody td {
   background: #1e1e1e !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-.v-theme--dark .modern-table :deep(tbody tr) {
+.v-theme--dark .modern-table tbody .table-row {
   background: #1e1e1e !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-.v-theme--dark .modern-table :deep(tbody tr:hover) {
-  background: rgba(255, 255, 255, 0.05) !important;
+.v-theme--dark .modern-table tbody .table-row:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
 }
 
-.v-theme--dark :deep(.modern-table) {
-  background: #1e1e1e !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.v-theme--dark :deep(.modern-table tbody tr) {
-  background: #1e1e1e !important;
-}
-
-.v-theme--dark :deep(.modern-table tbody tr:hover) {
-  background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.v-theme--dark :deep(.modern-table tbody td) {
-  background: #1e1e1e !important;
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.v-theme--dark :deep(.modern-dialog) {
-  background: #1e1e1e !important;
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.v-theme--dark :deep(.modern-dialog .v-card-text) {
-  background: #1e1e1e !important;
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.v-theme--dark :deep(.modern-dialog .v-card-actions) {
-  background: #2a2a2a !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.v-theme--dark .text-center {
-  color: rgba(255, 255, 255, 0.9) !important;
+.v-theme--dark .price-cell {
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
 /* Dark Mode Form Fields */

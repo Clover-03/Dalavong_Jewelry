@@ -1,51 +1,104 @@
 <template> 
-  <v-container fluid>
-    <h2 class="text-h6 font-weight-bold mb-4"
-        style="font-family: 'NotoSansLao-SemiCondensed', 'NotoSansLao-SemiCondensed'; color: #1e1e1e">
-      ຈັດການຂໍ້ມູນສິນຄ້າ
-    </h2>
-
+  <ModernPageLayout 
+    title="ຈັດການຂໍ້ມູນສິນຄ້າ"
+    subtitle="ຄຸ້ມຄອງແລະປັບປຸງຂໍ້ມູນສິນຄ້າທັງໝົດ"
+    icon="mdi-diamond-stone"
+  >
     <v-snackbar v-model="snackbar.show" :timeout="3000" :color="snackbar.color">
       {{ snackbar.message }}
     </v-snackbar>
 
-    <!-- Search and Add -->
-    <v-row align="center" class="mb-4">
+    <!-- Summary Statistics -->
+    <div class="summary-section mb-6">
+      <v-row>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#365a76">mdi-diamond-stone</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ totalProducts }}</h3>
+              <p class="stat-label">ສິນຄ້າທັງໝົດ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#10b981">mdi-check-circle</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ availableCount }}</h3>
+              <p class="stat-label">ພ້ອມຂາຍ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#f59e0b">mdi-cash-multiple</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ formatCurrency(averagePrice) }}</h3>
+              <p class="stat-label">ລາຄາສະເລ່ຍ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#8b5cf6">mdi-file-document-plus</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ filteredProducts.length }}</h3>
+              <p class="stat-label">ຜົນການຄົ້ນຫາ</p>
+            </div>
+          </div>
+        </v-col>
+      </v-row>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <v-row align="center" class="mb-6">
       <v-col cols="12" sm="6" md="4">
         <v-text-field
           v-model="search"
-          label="ຄົ້ນຫາ"
-          dense
-          outlined
+          label="ຄົ້ນຫາສິນຄ້າ"
+          variant="outlined"
+          density="comfortable"
           hide-details
-          class="flex-grow-1"
-        >
-          <template #append-inner>
-            <v-img
-              src="/icons/Search.png"
-              width="20"
-              height="20"
-              cover
-              class="cursor-pointer"
-            />
-          </template>
-        </v-text-field>
-      </v-col>
-      <v-col cols="12" sm="3">
-        <v-select
-          v-model="statusFilter"
-          :items="statusOptions"
-          label="ກອງຕາມສະຖານະ"
-          outlined
-          dense
-          hide-details
+          class="search-field"
+          color="#365a76"
+          prepend-inner-icon="mdi-magnify"
           clearable
         />
       </v-col>
+      <v-col cols="12" sm="4" md="3">
+        <v-select
+          v-model="statusFilter"
+          :items="statusOptions"
+          item-title="text"
+          item-value="value"
+          label="ກອງຕາມສະຖານະ"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          clearable
+          color="#365a76"
+          prepend-inner-icon="mdi-filter"
+        />
+      </v-col>
       <v-spacer />
-      <v-btn color="green" class="text-white" rounded @click="onOpenAddDialog">
-        ເພີ່ມ
-      </v-btn>
+      <v-col cols="auto">
+      <ModernButton 
+        variant="primary"
+          size="large"
+        prepend-icon="mdi-plus"
+          @click="onOpenAddDialog"
+        >
+          ເພີ່ມສິນຄ້າໃໝ່
+      </ModernButton>
+      </v-col>
     </v-row>
     
     <!-- Loading State -->
@@ -61,9 +114,9 @@
       <p class="text-body-1 text-grey-lighten-1">ລອງກົດປຸ່ມ "ເພີ່ມ" ເພື່ອສ້າງສິນຄ້າໃໝ່.</p>
     </div>
 
-    <!-- Data Table -->
-    <div v-else>
-      <v-table class="custom-table">
+    <!-- Modern Data Table -->
+    <div v-else class="table-container">
+      <v-table class="modern-table elevation-2">
         <thead>
           <tr>
             <th>ລຳດັບ</th>
@@ -80,10 +133,13 @@
               ນ້ຳຫນັກ <v-icon>{{ getSortIcon('weight') }}</v-icon>
             </th>
             <th @click="sortBy('estimatePrice')" class="cursor-pointer">
-              ລາຄາຮູບປະພັນ <v-icon>{{ getSortIcon('estimatePrice') }}</v-icon>
+              ຄ່າກຳເໜັດ <v-icon>{{ getSortIcon('estimatePrice') }}</v-icon>
             </th>
             <th @click="sortBy('status')" class="cursor-pointer">
               ສະຖານະ <v-icon>{{ getSortIcon('status') }}</v-icon>
+            </th>
+            <th @click="sortBy('condition')" class="cursor-pointer">
+              ສະພາບ <v-icon>{{ getSortIcon('condition') }}</v-icon>
             </th>
             <th class="text-center">Option</th>
           </tr>
@@ -97,8 +153,13 @@
             <td>{{ getWeightText(item.weight) }}</td>
             <td>{{ formatCurrency(item.estimatePrice) }}</td>
             <td>
-              <v-chip :color="getStatusColor(item.status)" size="small" dark>
+            <v-chip :color="getStatusColor(item.status)" size="small" variant="flat">
                 {{ item.status }}
+              </v-chip>
+            </td>
+            <td>
+              <v-chip :color="getConditionColor(item.condition)" size="small" variant="flat">
+                {{ getConditionText(item.condition) }}
               </v-chip>
             </td>
             <td class="text-center">
@@ -108,121 +169,143 @@
               <v-btn icon variant="text" density="comfortable" @click="onDelete(item)">
                 <v-img src="/icons/Delete.png" width="20" height="20" />
               </v-btn>
-              <v-btn v-if="item.status === 'REPURCHASED' || item.status === 'DAMAGED'" icon variant="text" density="comfortable" @click="markAsAvailable(item)">
+              <v-btn v-if="item.status === 'REPURCHASED' || item.status === 'DAMAGED' || item.condition === 'DAMAGED'" icon variant="text" density="comfortable" @click="markAsAvailable(item)">
                 <v-icon color="green">mdi-check-circle</v-icon>
               </v-btn>
             </td>
           </tr>
         </tbody>
       </v-table>
+    </div>
 
-      <!-- Enhanced Pagination from orders.vue -->
-      <div class="d-flex justify-center align-center mt-4">
+    <!-- Modern Pagination -->
+    <div v-if="!isLoading && products.length > 0" class="pagination-container">
+      <v-card class="pagination-card" elevation="1">
+        <v-card-text class="pa-4">
+          <div class="pagination-content">
+            <div class="pagination-info">
+              <span class="pagination-text">
+                ສະແດງ {{ ((page - 1) * itemsPerPage) + 1 }} - {{ Math.min(page * itemsPerPage, filteredProducts.length) }} 
+                ຈາກ {{ filteredProducts.length }} ສິນຄ້າ
+              </span>
+            </div>
+            
+            <div class="pagination-controls">
         <v-pagination
           v-model="page"
           :length="Math.ceil(filteredProducts.length / itemsPerPage)"
-          :total-visible="7"
-        >
-          <template #prev="{ props }">
-            <v-btn
-              variant="text"
-              v-bind="props"
-              class="px-0"
-              @click="goToPreviousPage"
-            >
-              <v-img
-                src="/icons/Arrow.png"
-                width="20"
-                height="20"
-                style="transform: rotate(90deg);"
-                class="cursor-pointer"
+                :total-visible="5"
+                class="custom-pagination"
+                size="small"
               />
-            </v-btn>
-          </template>
-          <template #next="{ props }">
-            <v-btn
-              variant="text"
-              v-bind="props"
-              class="px-0"
-              @click="goToNextPage"
-            >
-              <v-img
-                src="/icons/Arrow.png"
-                width="20"
-                height="20"
-                style="transform: rotate(270deg);"
-                class="cursor-pointer"
+            </div>
+            
+            <div class="pagination-settings">
+              <v-select
+                v-model="itemsPerPage"
+                :items="[5, 10, 15, 20]"
+                label="ລາຍການຕໍ່ໜ້າ"
+                variant="outlined"
+                density="compact"
+                hide-details
+                class="items-per-page-select"
               />
-            </v-btn>
-          </template>
-        </v-pagination>
-
-        <!-- More Pages Menu -->
-        <v-menu
-          v-model="pageMenu"
-          :close-on-content-click="true"
-          location="bottom end"
-        >
-          <template v-slot:activator="{ props }">
-            <v-btn
-              icon
-              v-bind="props"
-              class="ml-2"
-            >
-              <v-img
-                src="/icons/more.png"
-                width="24"
-                height="24"
-                class="cursor-pointer"
-              />
-            </v-btn>
-          </template>
-          <v-list>
-                      <v-list-item
-            v-for="n in Math.ceil(filteredProducts.length / itemsPerPage)"
-            :key="n"
-            :value="n"
-            @click="page = n"
-          >
-              <v-list-item-title>ໜ້າ {{ n }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </div>
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
     </div>
 
     <!-- Add Dialog -->
     <v-dialog v-model="addDialog" max-width="500px">
-      <v-card>
+      <v-card class="modern-dialog">
         <v-card-title class="dialog-title">ເພີ່ມສິນຄ້າ</v-card-title>
         <v-form ref="addForm" @submit.prevent="saveAdd" v-model="addFormValid">
-          <v-card-text>
-            <v-text-field v-model="addItem.code" label="ລະຫັດສິນຄ້າ" dense outlined :rules="[required]" />
-            <v-text-field v-model="addItem.name" label="ຊື່ສິນຄ້າ" dense outlined :rules="[required]" />
-            <v-text-field v-model="addItem.category" label="ປະເພດສິນຄ້າ" dense outlined :rules="[required]" />
+          <v-card-text class="pa-6">
+            <v-text-field 
+              v-model="addItem.code" 
+              label="ລະຫັດສິນຄ້າ (ສ້າງອັດຕະໂນມັດ)" 
+              variant="outlined"
+              density="comfortable"
+              readonly 
+              disabled
+              placeholder="ສ້າງອັດຕະໂນມັດ"
+              color="#365a76"
+            />
+            <v-text-field 
+              v-model="addItem.name" 
+              label="ຊື່ສິນຄ້າ" 
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
+            />
+            <v-text-field 
+              v-model="addItem.category" 
+              label="ປະເພດສິນຄ້າ" 
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
+            />
             <v-select
               v-model="addItem.weight"
               :items="weightOptions"
               item-title="text"
               item-value="value"
               label="ນ້ຳຫນັກ"
-              dense outlined :rules="[required]"
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
             />
             <v-text-field
               :model-value="formatForInput(addItem.estimatePrice)"
               @update:model-value="value => addItem.estimatePrice = parseInput(value)"
-              label="ຄ່າກຳເຫນັດ" 
-              dense 
-              outlined 
+              label="ຄ່າກຳເໜັດ" 
+              variant="outlined"
+              density="comfortable"
               :rules="[required]"
               type="text"
+              color="#365a76"
             />
-            <v-text-field :model-value="formatCurrency(calculatedSellPrice)" label="ລາຄາຂາຍໂດຍປະມານ" dense outlined readonly disabled />
+            <v-select
+              v-model="addItem.condition"
+              :items="conditionOptions"
+              item-title="text"
+              item-value="value"
+              label="ສະພາບສິນຄ້າ"
+              variant="outlined"
+              density="comfortable"
+              color="#365a76"
+            />
+            <v-text-field 
+              :model-value="formatCurrency(calculatedSellPrice)" 
+              label="ລາຄາຂາຍໂດຍປະມານ" 
+              variant="outlined"
+              density="comfortable"
+              readonly 
+              disabled
+              color="#365a76"
+            />
           </v-card-text>
-          <v-card-actions>
+          <v-card-actions class="pa-6 pt-0">
             <v-spacer />
-            <v-btn class="btn-cancel" @click="cancelAdd">ຍົກເລີກ</v-btn>
-            <v-btn class="btn-save" type="submit" :disabled="!addFormValid">ບັນທຶກ</v-btn>
+            <ModernButton 
+              variant="error"
+              @click="cancelAdd"
+              :disabled="loading.adding"
+            >
+              ຍົກເລີກ
+            </ModernButton>
+            <ModernButton 
+              variant="primary"
+              @click="saveAdd" 
+              :loading="loading.adding"
+              :disabled="!addFormValid"
+            >
+              ເພີ່ມ
+            </ModernButton>
           </v-card-actions>
         </v-form>
       </v-card>
@@ -230,36 +313,103 @@
 
     <!-- Edit Dialog -->
     <v-dialog v-model="editDialog" max-width="500px">
-      <v-card>
+      <v-card class="modern-dialog">
         <v-card-title class="dialog-title">ແກ້ໄຂສິນຄ້າ</v-card-title>
         <v-form ref="editForm" @submit.prevent="saveEdit" v-model="editFormValid">
-          <v-card-text>
-            <v-text-field v-model="editItem.code" label="ລະຫັດສິນຄ້າ" dense outlined :rules="[required]" />
-            <v-text-field v-model="editItem.name" label="ຊື່ສິນຄ້າ" dense outlined :rules="[required]" />
-            <v-text-field v-model="editItem.category" label="ປະເພດສິນຄ້າ" dense outlined :rules="[required]" />
+          <v-card-text class="pa-6">
+            <v-text-field 
+              v-model="editItem.code" 
+              label="ລະຫັດສິນຄ້າ (ແກ້ໄຂບໍ່ໄດ້)" 
+              variant="outlined"
+              density="comfortable"
+              readonly 
+              disabled
+              color="#365a76"
+            />
+            <v-text-field 
+              v-model="editItem.name" 
+              label="ຊື່ສິນຄ້າ" 
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
+            />
+            <v-text-field 
+              v-model="editItem.category" 
+              label="ປະເພດສິນຄ້າ" 
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
+            />
             <v-select
               v-model="editItem.weight"
               :items="weightOptions"
               item-title="text"
               item-value="value"
               label="ນ້ຳຫນັກ"
-              dense outlined :rules="[required]"
+              variant="outlined"
+              density="comfortable"
+              :rules="[required]"
+              color="#365a76"
             />
             <v-text-field
               :model-value="formatForInput(editItem.estimatePrice)"
               @update:model-value="value => editItem.estimatePrice = parseInput(value)"
-              label="ຄ່າກຳເຫນັດ" 
-              dense 
-              outlined 
+              label="ຄ່າກຳເໜັດ" 
+              variant="outlined"
+              density="comfortable"
               :rules="[required]"
               type="text"
+              color="#365a76"
             />
-            <v-text-field :model-value="formatCurrency(calculatedEditSellPrice)" label="ລາຄາຂາຍໂດຍປະມານ" dense outlined readonly disabled />
+            <v-select
+              v-model="editItem.status"
+              :items="statusOptions"
+              item-title="text"
+              item-value="value"
+              label="ສະຖານະສິນຄ້າ"
+              variant="outlined"
+              density="comfortable"
+              color="#365a76"
+            />
+            <v-select
+              v-model="editItem.condition"
+              :items="conditionOptions"
+              item-title="text"
+              item-value="value"
+              label="ສະພາບສິນຄ້າ"
+              variant="outlined"
+              density="comfortable"
+              color="#365a76"
+            />
+            <v-text-field 
+              :model-value="formatCurrency(calculatedEditSellPrice)" 
+              label="ລາຄາຂາຍໂດຍປະມານ" 
+              variant="outlined"
+              density="comfortable"
+              readonly 
+              disabled
+              color="#365a76"
+            />
           </v-card-text>
-          <v-card-actions>
+          <v-card-actions class="pa-6 pt-0">
             <v-spacer />
-            <v-btn class="btn-cancel" @click="editDialog = false">ຍົກເລີກ</v-btn>
-            <v-btn class="btn-save" type="submit" :disabled="!editFormValid">ບັນທຶກ</v-btn>
+            <ModernButton 
+              variant="error"
+              @click="editDialog = false"
+              :disabled="loading.editing"
+            >
+              ຍົກເລີກ
+            </ModernButton>
+            <ModernButton 
+              variant="primary"
+              @click="saveEdit" 
+              :loading="loading.editing"
+              :disabled="!editFormValid"
+            >
+              ແກ້ໄຂ
+            </ModernButton>
           </v-card-actions>
         </v-form>
       </v-card>
@@ -267,153 +417,309 @@
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="400px">
-      <v-card>
+      <v-card class="modern-dialog">
         <v-card-title class="dialog-title">ຢືນຢັນການລຶບ</v-card-title>
-        <v-card-text>
-          ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບສິນຄ້າ "{{ itemToDelete?.name }}"?
+        <v-card-text class="pa-6">
+          <div class="text-center py-4">
+            <v-icon size="64" color="warning" class="mb-4">mdi-alert-circle-outline</v-icon>
+            <p class="text-h6 mb-2">ທ່ານແນ່ໃຈບໍ່?</p>
+            <p class="text-body-2">ຕ້ອງການລຶບສິນຄ້າ "{{ itemToDelete?.name }}"?</p>
+            <p class="text-caption text-error mt-3">ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້</p>
+          </div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-6 pt-0">
           <v-spacer />
-          <v-btn class="btn-cancel" @click="deleteDialog = false">ບໍ່</v-btn>
-          <v-btn class="btn-save" @click="confirmDelete">ແມ່ນ</v-btn>
+          <ModernButton 
+            variant="error"
+            @click="deleteDialog = false" 
+            :disabled="loading.deleting"
+          >
+            ບໍ່
+          </ModernButton>
+          <ModernButton 
+            variant="primary"
+            @click="confirmDelete" 
+            :loading="loading.deleting"
+          >
+            ແມ່ນ
+          </ModernButton>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-  </v-container>
+  </ModernPageLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { fetchProducts, createProduct, updateProduct, deleteProduct } from '~/services/productApi';
-import { fetchLatestPrice } from '~/services/priceApi';
+import { ref, onMounted, computed, nextTick } from 'vue';
+import { useApi } from '~/composables/useApi';
+import { useSnackbar } from '~/composables/useSnackbar';
+import { formatCurrency, formatWeight } from '~/utils/format.js';
+import ModernPageLayout from '~/components/ModernPageLayout.vue';
+import ModernButton from '~/components/ModernButton.vue';
 
-const apiUrl = 'http://localhost:3001/api/products';
-const pricesApiUrl = 'http://localhost:3001/api/prices/latest';
+const api = useApi();
+const { snackbar, showSnackbar } = useSnackbar();
 
+const search = ref('');
+const statusFilter = ref(null);
+const products = ref([]);
 const isLoading = ref(true);
-const isSaving = ref(false);
+const loading = ref({
+  adding: false,
+  editing: false,
+  deleting: false
+});
 const latestGoldPrice = ref(null);
+
+// Dialogs
+const addDialog = ref(false);
+const editDialog = ref(false);
+const deleteDialog = ref(false);
+
+// Forms
+const addForm = ref(null);
+const editForm = ref(null);
+const addFormValid = ref(false);
+const editFormValid = ref(false);
+
+const addItem = ref({
+    code: '',
+    name: '',
+    category: '',
+    weight: null,
+    estimatePrice: 0,
+    condition: 'GOOD',
+});
+const editItem = ref({});
+const itemToDelete = ref(null);
+
+const required = (value) => !!value || 'ກະລຸນາປ້ອນຂໍ້ມູນ';
+
+// Sorting
 const sortKey = ref('name');
 const sortDesc = ref(false);
 
-const search = ref('')
-const page = ref(1)
-const itemsPerPage = ref(10)
+// Pagination
+const page = ref(1);
+const itemsPerPage = ref(10);
+const pageMenu = ref(false);
 
-const snackbar = ref({
-  show: false,
-  message: '',
-  color: 'success'
-})
-
-const products = ref([])
-const statusFilter = ref(null);
-const statusOptions = [
-  { text: 'ສິນຄ້າທັງໝົດ', value: null },
-  { text: 'ພ້ອມຂາຍ', value: 'AVAILABLE' },
-  { text: 'ຂາຍແລ້ວ', value: 'SOLD' },
-  { text: 'ຊື້ຄືນແລ້ວ', value: 'REPURCHASED' },
-  { text: 'ເສຍຫາຍ', value: 'DAMAGED' },
-];
-
-const addDialog = ref(false)
-const editDialog = ref(false)
-const deleteDialog = ref(false)
-
-const weightOptions = ref([
-  { text: '0.25 ບາດ', value: 'B0_25' },
-  { text: '0.5 ບາດ', value: 'B0_5' },
-  { text: '1 ບາດ', value: 'B1' },
-  { text: '2 ບາດ', value: 'B2' },
-  { text: '3 ບາດ', value: 'B3' },
-  { text: '5 ບາດ', value: 'B5' },
-  { text: '10 ບາດ', value: 'B10' },
-]);
-
-const defaultProduct = {
-  code: '', name: '', category: '', weight: null, estimatePrice: ''
-}
-
-const addItem = ref({ ...defaultProduct })
-const editItem = ref({})
-const itemToDelete = ref(null)
-
-const addForm = ref(null)
-const editForm = ref(null)
-const addFormValid = ref(false)
-const editFormValid = ref(false)
-
-const required = value => !!value || 'ຈຳເປັນຕ້ອງປ້ອນ'
-// const numeric = value => /^\d+(,\d{3})*(\.\d+)?$/.test(value) || 'ຕ້ອງໃສ່ເປັນຕົວເລກ'
-
-const calculatedSellPrice = computed(() => {
-  if (!latestGoldPrice.value || !addItem.value.weight || !addItem.value.estimatePrice) {
-    return 0;
-  }
-  const weightInGrams = convertWeightCodeToGrams(addItem.value.weight);
-  const craftsmanshipFee = parseFloat(String(addItem.value.estimatePrice).replace(/,/g, '')) || 0;
-  const goldSellPrice = latestGoldPrice.value.sellPrice;
+// Fetch initial data
+onMounted(async () => {
+  // Fetch products first as it's more critical
+  await fetchProducts();
   
-  const calculatedPrice = ((goldSellPrice / 15.16) * weightInGrams) + craftsmanshipFee;
-  return calculatedPrice;
+  // Fetch gold price in parallel (non-blocking)
+  fetchLatestGoldPrice().catch(err => {
+    console.warn('Gold price fetch failed:', err);
+  });
 });
 
-const calculatedEditSellPrice = computed(() => {
-  if (!latestGoldPrice.value || !editItem.value.weight || !editItem.value.estimatePrice) {
-    return 0;
+const fetchProducts = async () => {
+  isLoading.value = true;
+  try {
+    const response = await api.get('/products');
+    
+    if (response && response.success) {
+      products.value = response.data || [];
+    } else if (response && !response.success) {
+      showSnackbar(response.error || 'ບໍ່ສາມາດໂຫລດຂໍ້ມູນສິນຄ້າໄດ້', 'error');
+      products.value = [];
+    } else {
+      // response is null (likely due to auth redirect)
+      products.value = [];
+    }
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    showSnackbar(error.message || 'ບໍ່ສາມາດໂຫລດຂໍ້ມູນສິນຄ້າໄດ້', 'error');
+    products.value = [];
+  } finally {
+    isLoading.value = false;
   }
-  const weightInGrams = convertWeightCodeToGrams(editItem.value.weight);
-  const craftsmanshipFee = parseFloat(String(editItem.value.estimatePrice).replace(/,/g, '')) || 0;
-  const goldSellPrice = latestGoldPrice.value.sellPrice;
-  
-  const calculatedPrice = ((goldSellPrice / 15.16) * weightInGrams) + craftsmanshipFee;
-  return calculatedPrice;
+};
+
+const fetchLatestGoldPrice = async () => {
+  try {
+    const response = await api.get('/prices/latest');
+    if (response && response.success) {
+      latestGoldPrice.value = response.data;
+    } else if (response) {
+      latestGoldPrice.value = response; // Direct response format
+    }
+  } catch (error) {
+    console.warn('Could not fetch gold price:', error);
+    // Don't show error for gold price as it's not critical
+  }
+};
+
+// Add Dialog Logic
+const onOpenAddDialog = async () => {
+  addItem.value = {
+    code: '',
+    name: '',
+    category: '',
+    weight: null,
+    estimatePrice: 0,
+    condition: 'GOOD',
+  };
+  addDialog.value = true;
+  await nextTick();
+  addForm.value.resetValidation();
+};
+
+const cancelAdd = () => {
+  addDialog.value = false;
+};
+
+const saveAdd = async () => {
+  const { valid } = await addForm.value.validate();
+  if (!valid) return;
+
+  loading.value.adding = true;
+  try {
+    const payload = {
+      Pd_name: addItem.value.name,
+      Type: addItem.value.category,
+      Weight: addItem.value.weight,
+      Pattern_value: addItem.value.estimatePrice,
+      condition: addItem.value.condition,
+    };
+    
+    const response = await api.post('/products', payload);
+    
+    if (response && response.success) {
+      showSnackbar('ເພີ່ມສິນຄ້າສຳເລັດ', 'success');
+      addDialog.value = false;
+      await fetchProducts();
+    } else {
+      showSnackbar(response?.error || 'ບໍ່ສາມາດເພີ່ມສິນຄ້າໄດ້', 'error');
+    }
+  } catch (error) {
+    console.error('Error adding product:', error);
+    showSnackbar(error.message || 'ບໍ່ສາມາດເພີ່ມສິນຄ້າໄດ້', 'error');
+  } finally {
+    loading.value.adding = false;
+  }
+};
+
+// Edit Dialog Logic
+const onEdit = (item) => {
+  editItem.value = { ...item };
+  editDialog.value = true;
+};
+
+const saveEdit = async () => {
+  const { valid } = await editForm.value.validate();
+  if (!valid) return;
+
+  loading.value.editing = true;
+  try {
+    const payload = {
+      Pd_name: editItem.value.name,
+      Type: editItem.value.category,
+      Weight: editItem.value.weight,
+      Pattern_value: editItem.value.estimatePrice,
+      status: editItem.value.status,
+      condition: editItem.value.condition,
+    };
+    
+    const response = await api.put(`/products/${editItem.value.id}`, payload);
+    
+    if (response && response.success) {
+      showSnackbar('ແກ້ໄຂສິນຄ້າສຳເລັດ', 'success');
+      editDialog.value = false;
+      await fetchProducts();
+    } else {
+      showSnackbar(response?.error || 'ບໍ່ສາມາດແກ້ໄຂສິນຄ້າໄດ້', 'error');
+    }
+  } catch (error) {
+    console.error('Error editing product:', error);
+    showSnackbar(error.message || 'ບໍ່ສາມາດແກ້ໄຂສິນຄ້າໄດ້', 'error');
+  } finally {
+    loading.value.editing = false;
+  }
+};
+
+// Delete Dialog Logic
+const onDelete = (item) => {
+  itemToDelete.value = item;
+  deleteDialog.value = true;
+};
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return;
+  loading.value.deleting = true;
+  try {
+    const response = await api.del(`/products/${itemToDelete.value.id}`);
+    
+    if (response && response.success) {
+      showSnackbar('ລຶບສິນຄ້າສຳເລັດ', 'success');
+      deleteDialog.value = false;
+      itemToDelete.value = null;
+      await fetchProducts();
+    } else {
+      showSnackbar(response?.error || 'ບໍ່ສາມາດລຶບສິນຄ້າໄດ້', 'error');
+    }
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    showSnackbar(error.message || 'ບໍ່ສາມາດລຶບສິນຄ້າໄດ້', 'error');
+  } finally {
+    loading.value.deleting = false;
+  }
+};
+
+// Mark as Available
+const markAsAvailable = async (item) => {
+    try {
+        const response = await api.put(`/products/${item.id}/status`, { status: 'AVAILABLE' });
+        
+        if (response && response.success) {
+            showSnackbar('ອັບເດດສະຖານະສຳເລັດ', 'success');
+            await fetchProducts();
+        } else {
+            showSnackbar(response?.error || 'ບໍ່ສາມາດອັບເດດສະຖານະໄດ້', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating product status:', error);
+        showSnackbar('ບໍ່ສາມາດອັບເດດສະຖານະໄດ້: ' + (error.message || 'ເກີດຂໍ້ຜິດພາດ'), 'error');
+    }
+};
+
+// Computed Properties for Display and Filtering
+const filteredProducts = computed(() => {
+  return products.value.filter(p => {
+    const searchLower = search.value.toLowerCase();
+    const matchesSearch =
+      String(p.code || '').toLowerCase().includes(searchLower) ||
+      p.name?.toLowerCase().includes(searchLower) ||
+      p.category?.toLowerCase().includes(searchLower);
+    const matchesStatus = !statusFilter.value || p.status === statusFilter.value;
+    return matchesSearch && matchesStatus;
+  });
 });
 
 const sortedProducts = computed(() => {
-  const key = sortKey.value;
-  const order = sortDesc.value ? -1 : 1;
-  
-  return [...products.value].sort((a, b) => {
-    let valA = a[key];
-    let valB = b[key];
-
-    if (key === 'estimatePrice') {
-      valA = parseFloat(String(valA).replace(/,/g, '')) || 0;
-      valB = parseFloat(String(valB).replace(/,/g, '')) || 0;
-    } else {
-      valA = String(valA || '').toLowerCase();
-      valB = String(valB || '').toLowerCase();
-    }
-    
-    if (valA < valB) return order * -1;
-    if (valA > valB) return order * 1;
-    
+  const data = [...filteredProducts.value];
+  return data.sort((a, b) => {
+    const keyA = a[sortKey.value];
+    const keyB = b[sortKey.value];
+    const order = sortDesc.value ? -1 : 1;
+    if (keyA < keyB) return -1 * order;
+    if (keyA > keyB) return 1 * order;
     return 0;
   });
 });
 
-const filteredProducts = computed(() => {
-  let data = sortedProducts.value;
-  if (search.value) {
-    const lowerSearch = search.value.toLowerCase();
-    data = data.filter(p => 
-      p.code.toLowerCase().includes(lowerSearch) || 
-      p.name.toLowerCase().includes(lowerSearch)
-    );
-  }
-  if (statusFilter.value) {
-    data = data.filter(p => p.status === statusFilter.value);
-  }
-  return data;
-})
-
 const paginatedProducts = computed(() => {
-  const start = (page.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value;
-  return filteredProducts.value.slice(start, end)
-})
+  const start = (page.value - 1) * itemsPerPage.value;
+  return sortedProducts.value.slice(start, start + itemsPerPage.value);
+});
+
+// Helper and Formatting Functions
+const getSortIcon = (key) => {
+  if (sortKey.value !== key) return 'mdi-sort';
+  return sortDesc.value ? 'mdi-sort-descending' : 'mdi-sort-ascending';
+};
 
 const sortBy = (key) => {
   if (sortKey.value === key) {
@@ -422,283 +728,530 @@ const sortBy = (key) => {
     sortKey.value = key;
     sortDesc.value = false;
   }
-  page.value = 1;
 };
 
-const getSortIcon = (key) => {
-  if (sortKey.value !== key) {
-    return 'mdi-sort';
-  }
-  return sortDesc.value ? 'mdi-sort-descending' : 'mdi-sort-ascending';
-};
-
-const getToken = () => localStorage.getItem('token');
-
-const showSnackbar = (message, color = 'success') => {
-  snackbar.value.message = message;
-  snackbar.value.color = color;
-  snackbar.value.show = true;
-}
-
-const fetchLatestGoldPrice = async () => {
-  try {
-    const token = getToken();
-    const response = await fetch(pricesApiUrl, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) throw new Error('Failed to fetch latest gold price');
-    latestGoldPrice.value = await response.json();
-  } catch (error) {
-    console.error('Error fetching latest gold price:', error);
-    showSnackbar('ບໍ່ສາມາດດຶງຂໍ້ມູນລາຄາຄຳລ່າສຸດໄດ້', 'error');
-  }
-};
-
-const fetchInitialData = async () => {
-  isLoading.value = true;
-  try {
-    const [productsData, priceData] = await Promise.all([
-      fetchProducts(),
-      fetchLatestPrice()
-    ]);
-    products.value = productsData;
-    latestGoldPrice.value = priceData.latestPrice;
-  } catch (error) {
-    showSnackbar(error.message, 'error');
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-onMounted(fetchInitialData);
-
-const onOpenAddDialog = () => {
-  editItem.value = null;
-  addItem.value = { ...defaultProduct };
-  addForm.value?.resetValidation();
-  addFormValid.value = false;
-  addDialog.value = true;
-}
-
-const cancelAdd = () => {
-  addItem.value = { ...defaultProduct };
-  addForm.value?.resetValidation();
-  addFormValid.value = false;
-  addDialog.value = false;
-}
-
-const onEdit = (item) => {
-  editItem.value = { ...item };
-  editForm.value?.resetValidation();
-  editFormValid.value = false;
-  editDialog.value = true;
-}
-
-const saveEdit = async () => {
-  const { valid } = await editForm.value.validate();
-  if (!valid) return;
-
-  isSaving.value = true;
-  try {
-    const token = getToken();
-    const { id, createdAt, updatedAt, ...dataToUpdate } = editItem.value;
-    const response = await fetch(`${apiUrl}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(dataToUpdate)
-    });
-    if (!response.ok) throw new Error('Failed to update product');
-    await fetchInitialData();
-    editDialog.value = false;
-    showSnackbar('ແກ້ໄຂສິນຄ້າສຳເລັດ');
-  } catch (error) {
-    console.error('Error updating product:', error);
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການແກ້ໄຂ', 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-const saveAdd = async () => {
-  const { valid } = await addForm.value.validate();
-  if (!valid) return;
-
-  isSaving.value = true;
-  try {
-    const token = getToken();
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(addItem.value)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: `Server error: ${response.status}` }));
-      throw new Error(errorData.message || 'An unknown error occurred');
-    }
-    
-    await fetchInitialData();
-    page.value = 1;
-    cancelAdd();
-    showSnackbar('ເພີ່ມສິນຄ້າສຳເລັດ');
-  } catch (error) {
-    console.error('Error in saveAdd:', error.message);
-    showSnackbar(error.message, 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-const onDelete = (item) => {
-  itemToDelete.value = item;
-  deleteDialog.value = true;
-}
-
-const confirmDelete = async () => {
-  if (!itemToDelete.value) return;
-
-  isSaving.value = true;
-  try {
-    const token = getToken();
-    const response = await fetch(`${apiUrl}/${itemToDelete.value.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) throw new Error('Failed to delete product');
-    await fetchInitialData();
-    deleteDialog.value = false;
-    itemToDelete.value = null;
-    showSnackbar('ລຶບສິນຄ້າສຳເລັດ');
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການລຶບ', 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
+const statusOptions = [
+  { text: 'AVAILABLE', value: 'AVAILABLE' },
+  { text: 'SOLD', value: 'SOLD' },
+  { text: 'REPURCHASED', value: 'REPURCHASED' },
+  { text: 'DAMAGED', value: 'DAMAGED' },
+];
 
 const getWeightText = (value) => {
-  const option = weightOptions.value.find(opt => opt.value === value);
-  return option ? option.text : value;
+  return formatWeight(value);
 };
 
-const formatCurrency = (value) => {
-  if (!value) return '0';
-  const num = parseFloat(String(value).replace(/,/g, ''));
-  if (isNaN(num)) return value;
-  return new Intl.NumberFormat('lo-LA').format(num);
+const getStatusColor = (status) => {
+  const colors = {
+    AVAILABLE: 'green',
+    SOLD: 'blue-grey',
+    REPURCHASED: 'orange',
+    DAMAGED: 'red',
+  };
+  return colors[status] || 'grey';
 };
 
+const getConditionColor = (condition) => {
+  const colors = {
+    GOOD: 'success',
+    DAMAGED: 'error',
+    NEEDS_REPAIR: 'warning',
+  };
+  return colors[condition] || 'grey';
+};
+
+const getConditionText = (condition) => {
+  const texts = {
+    GOOD: 'ສະພາບດີ',
+    DAMAGED: 'ເສຍຫາຍ',
+    NEEDS_REPAIR: 'ຕ້ອງຊ່ອມ',
+  };
+  return texts[condition] || condition;
+};
+
+const conditionOptions = [
+  { text: 'ສະພາບດີ', value: 'GOOD' },
+  { text: 'ເສຍຫາຍ', value: 'DAMAGED' },
+  { text: 'ຕ້ອງຊ່ອມ', value: 'NEEDS_REPAIR' },
+];
+
+// Currency Input Handling
 const formatForInput = (value) => {
-  if (value === null || value === undefined || value === '') return '';
+  if (value == null) return '';
   return new Intl.NumberFormat('en-US').format(value);
 };
 
 const parseInput = (value) => {
-  const parsed = parseFloat(String(value).replace(/,/g, ''));
-  return isNaN(parsed) ? 0 : parsed;
+  return Number(String(value).replace(/,/g, ''));
 };
 
-const pageMenu = ref(false);
-
-function goToPreviousPage() {
-  if (page.value > 1) {
-    page.value--
-  }
-}
-
-function goToNextPage() {
-  const totalPages = Math.ceil(filteredProducts.value.length / itemsPerPage.value)
-  if (page.value < totalPages) {
-    page.value++
-  }
-}
-
-const convertWeightCodeToGrams = (code) => {
-  if (!code) return 0;
-  const parts = code.split('B');
-  if (parts.length < 2) return 0;
-  const numericPart = parts[1].replace('_', '.');
-  const weightInBaht = parseFloat(numericPart);
-  if (isNaN(weightInBaht)) return 0;
-  return weightInBaht * 15.16;
-};
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'AVAILABLE': return 'green';
-    case 'SOLD': return 'red';
-    case 'REPURCHASED': return 'blue';
-    case 'DAMAGED': return 'orange';
-    default: return 'grey';
+// Pagination Controls
+const goToPreviousPage = () => { if (page.value > 1) page.value--; };
+const goToNextPage = () => {
+  if (page.value < Math.ceil(filteredProducts.value.length / itemsPerPage.value)) {
+    page.value++;
   }
 };
 
-const markAsAvailable = async (item) => {
-  if (item.status === 'AVAILABLE') {
-    showSnackbar('ສິນຄ້າຢູ່ໃນສະຖານະພ້ອມຂາຍແລ້ວ', 'info');
-    return;
-  }
-  try {
-    const token = getToken();
-    const response = await fetch(`${apiUrl}/${item.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ ...item, status: 'AVAILABLE' })
-    });
-    if (!response.ok) throw new Error('Failed to mark product as available');
-    await fetchInitialData();
-    showSnackbar('ປ່ຽນສະຖານະສິນຄ້າເປັນພ້ອມຂາຍສຳເລັດ', 'success');
-  } catch (error) {
-    console.error('Error marking product as available:', error);
-    showSnackbar('ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສະຖານະ', 'error');
-  }
-}
+// Calculated Sell Price
+const calculatedSellPrice = computed(() => {
+  if (!latestGoldPrice.value || !addItem.value.weight) return addItem.value.estimatePrice;
+
+  const weightInGrams = parseFloat(addItem.value.weight);
+  if (isNaN(weightInGrams)) return addItem.value.estimatePrice;
+
+  const goldPricePerGram = latestGoldPrice.value.Sell_price / 15.16;
+  const goldValue = goldPricePerGram * weightInGrams;
+
+  return (addItem.value.estimatePrice || 0) + goldValue;
+});
+
+const calculatedEditSellPrice = computed(() => {
+  if (!latestGoldPrice.value || !editItem.value.weight) return editItem.value.estimatePrice;
+
+  const weightInGrams = parseFloat(editItem.value.weight);
+  if (isNaN(weightInGrams)) return editItem.value.estimatePrice;
+
+  const goldPricePerGram = latestGoldPrice.value.Sell_price / 15.16;
+  const goldValue = goldPricePerGram * weightInGrams;
+
+  return (editItem.value.estimatePrice || 0) + goldValue;
+});
+
+const weightOptions = [
+  { text: "3.79g (1 ສະຫຼຶງ)", value: 3.79 },
+  { text: "7.58g (2 ສະຫຼຶງ)", value: 7.58 },
+  { text: "15.16g (1 ບາດ)", value: 15.16 },
+  { text: "22.74g (1.5 ບາດ)", value: 22.74 },
+  { text: "30.32g (2 ບາດ)", value: 30.32 },
+  { text: "37.90g (2.5 ບາດ)", value: 37.90 },
+  { text: "45.48g (3 ບາດ)", value: 45.48 },
+  { text: "60.64g (4 ບາດ)", value: 60.64 },
+  { text: "75.80g (5 ບາດ)", value: 75.80 },
+];
+
+// Statistics computed properties
+const totalProducts = computed(() => products.value.length || 0);
+
+const availableCount = computed(() => 
+  products.value.filter(p => p.status === 'AVAILABLE').length || 0
+);
+
+const averagePrice = computed(() => {
+  if (products.value.length === 0) return 0;
+  const total = products.value.reduce((sum, p) => sum + (p.estimatePrice || 0), 0);
+  return Math.round(total / products.value.length);
+});
 
 </script>
 
 <style scoped>
-th {
-  font-weight: bold;
+/* Summary Statistics */
+.summary-section {
+  margin-bottom: 32px;
 }
-.gap-2 {
-  gap: 8px;
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(54, 90, 118, 0.08);
+  border: 1px solid rgba(54, 90, 118, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
 }
-.custom-table td,
-.custom-table th {
-  vertical-align: middle;
-  padding-top: 10px;
-  padding-bottom: 10px;
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(54, 90, 118, 0.15);
 }
-.dialog-title {
-  background-color: #365a76;
-  color: white;
-  font-weight: bold;
+
+.stat-icon {
+  background: linear-gradient(135deg, rgba(54, 90, 118, 0.1) 0%, rgba(54, 90, 118, 0.05) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.btn-cancel {
-  background-color: #f44336 !important;
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #365a76;
+  margin: 0 0 4px 0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Form Field Styling */
+.search-field :deep(.v-field__outline) {
+  --v-field-border-color: #365a76;
+}
+
+.search-field :deep(.v-field--focused .v-field__outline) {
+  --v-field-border-color: #365a76;
+  --v-field-border-width: 2px;
+}
+
+:deep(.v-text-field .v-field__outline) {
+  border-radius: 12px;
+}
+
+:deep(.v-select .v-field__outline) {
+  border-radius: 12px;
+}
+
+:deep(.v-text-field--focused .v-field__outline) {
+  border-width: 2px;
+}
+
+:deep(.v-select--focused .v-field__outline) {
+  border-width: 2px;
+}
+
+/* Modern Data Table */
+:deep(.modern-table) {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(54, 90, 118, 0.08);
+  border: 1px solid rgba(54, 90, 118, 0.1);
+}
+
+:deep(.modern-table thead tr) {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%);
+}
+
+:deep(.modern-table thead th) {
   color: white !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 20px 16px;
+  border-bottom: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.btn-save {
-  background-color: #4caf50 !important;
-  color: white !important;
+
+:deep(.modern-table tbody tr) {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(54, 90, 118, 0.1);
 }
+
+:deep(.modern-table tbody tr:hover) {
+  background: linear-gradient(135deg, rgba(54, 90, 118, 0.03) 0%, rgba(54, 90, 118, 0.06) 100%);
+  transform: scale(1.01);
+}
+
+:deep(.modern-table tbody td) {
+  padding: 16px;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+/* Cursor pointer for sortable columns */
 .cursor-pointer {
   cursor: pointer;
-}
-th.cursor-pointer {
   user-select: none;
+  transition: background-color 0.2s ease;
 }
-th.cursor-pointer:hover {
-  background-color: rgba(0,0,0,0.05);
+
+.cursor-pointer:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Modern Dialog Styles */
+:deep(.modern-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.dialog-title) {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%);
+  color: white !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: 0.5px;
+  text-align: center;
+  position: relative;
+}
+
+:deep(.dialog-title::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #f9a825);
+  border-radius: 2px;
+}
+
+/* Status Chip Enhancement */
+:deep(.v-chip) {
+  font-weight: 600;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+/* Modern Pagination */
+.pagination-container {
+  margin-top: 24px;
+}
+
+.pagination-card {
+  border-radius: 12px !important;
+  border: 1px solid rgba(54, 90, 118, 0.1) !important;
+}
+
+.pagination-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pagination-info {
+  flex: 1;
+}
+
+.pagination-text {
+  color: #666;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination-settings {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.items-per-page-select {
+  max-width: 140px;
+}
+
+.custom-pagination {
+  --v-pagination-border-radius: 8px;
+}
+
+/* Card Actions Spacing */
+:deep(.v-card-actions) {
+  gap: 12px;
+}
+
+/* Loading and Empty States */
+.text-center {
+  color: #64748b;
+}
+
+:deep(.v-progress-circular) {
+  margin: 20px auto;
+}
+
+/* Form Validation */
+:deep(.v-messages__message) {
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  :deep(.modern-table) {
+    font-size: 0.875rem;
+  }
+  
+  :deep(.modern-table thead th),
+  :deep(.modern-table tbody td) {
+    padding: 12px 8px;
+  }
+}
+
+/* Dark Mode Support */
+.v-theme--dark .stat-card,
+.v-theme--dark .table-container {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .stat-number,
+.v-theme--dark .stat-label {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark .modern-table :deep(tbody td) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark .modern-table :deep(tbody tr) {
+  background: #1e1e1e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .modern-table :deep(tbody tr:hover) {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.v-theme--dark :deep(.modern-table) {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark :deep(.modern-table tbody tr) {
+  background: #1e1e1e !important;
+}
+
+.v-theme--dark :deep(.modern-table tbody tr:hover) {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.v-theme--dark :deep(.modern-table tbody td) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.modern-dialog) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.modern-dialog .v-card-text) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.modern-dialog .v-card-actions) {
+  background: #2a2a2a !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .text-center {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Dark Mode Form Fields */
+.v-theme--dark .search-field :deep(.v-field__outline) {
+  --v-field-border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.v-theme--dark .search-field :deep(.v-field--focused .v-field__outline) {
+  --v-field-border-color: #365a76 !important;
+}
+
+.v-theme--dark :deep(.v-text-field .v-field__outline),
+.v-theme--dark :deep(.v-select .v-field__outline) {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.v-theme--dark :deep(.v-text-field--focused .v-field__outline),
+.v-theme--dark :deep(.v-select--focused .v-field__outline) {
+  border-color: #365a76 !important;
+}
+
+.v-theme--dark :deep(.v-text-field .v-field__input),
+.v-theme--dark :deep(.v-select .v-field__input) {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background: #1e1e1e !important;
+}
+
+.v-theme--dark :deep(.v-text-field .v-field__field),
+.v-theme--dark :deep(.v-select .v-field__field) {
+  background: #1e1e1e !important;
+}
+
+.v-theme--dark :deep(.v-text-field .v-label),
+.v-theme--dark :deep(.v-select .v-label) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.v-theme--dark :deep(.v-text-field .v-field--focused .v-label),
+.v-theme--dark :deep(.v-select .v-field--focused .v-label) {
+  color: #365a76 !important;
+}
+
+/* Dark Mode Dialog Elements */
+.v-theme--dark :deep(.v-dialog .v-card) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.v-dialog .v-card-text) {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.v-dialog .v-card-actions) {
+  background: #2a2a2a !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dark Mode Pagination */
+.v-theme--dark .pagination-card {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .pagination-info,
+.v-theme--dark .pagination-controls,
+.v-theme--dark .pagination-settings {
+  color: white;
+}
+
+.v-theme--dark .pagination-text {
+  color: #aaa !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .pagination-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .pagination-info,
+  .pagination-settings {
+    flex: none;
+  }
+}
+
+/* Dark Mode Menu and List */
+.v-theme--dark :deep(.v-menu .v-list) {
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark :deep(.v-list-item) {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark :deep(.v-list-item:hover) {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dark Mode Progress Circular */
+.v-theme--dark :deep(.v-progress-circular) {
+  color: #365a76 !important;
 }
 </style>

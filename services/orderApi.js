@@ -1,74 +1,57 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// Order API Services
+import { useApi } from '~/composables/useApi'
 
-/**
- * A generic helper function for API requests.
- * Manages token authentication and standardized error handling.
- */
-const apiRequest = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
+export const fetchOrders = async (searchParams = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Request failed: ${response.status}`);
-    }
-
-    if (response.status === 204) {
-      return null;
-    }
-    return response.json();
+    const api = useApi()
+    const { data } = await api.get('/orders', searchParams)
+    return data
   } catch (error) {
-    console.error(`API Error on ${endpoint}:`, error);
-    throw error;
+    console.error('Error fetching orders:', error)
+    throw error
   }
-};
+}
 
-/**
- * Fetches all orders.
- */
-export const fetchOrders = () => {
-  return apiRequest('/orders');
-};
+export const createOrder = async (orderData) => {
+  try {
+    const api = useApi()
+    const { data } = await api.post('/orders', orderData)
+    return data
+  } catch (error) {
+    console.error('Error creating order:', error)
+    throw error
+  }
+}
 
-/**
- * Creates a new order.
- * @param {object} orderData - The complete order object, including products array.
- */
-export const createOrder = (orderData) => {
-  return apiRequest('/orders', {
-    method: 'POST',
-    body: JSON.stringify(orderData),
-  });
-};
+export const updateOrder = async (id, orderData) => {
+  try {
+    const api = useApi()
+    const { data } = await api.put(`/orders/${id}`, orderData)
+    return data
+  } catch (error) {
+    console.error('Error updating order:', error)
+    throw error
+  }
+}
 
-/**
- * Updates an existing order.
- * @param {number | string} orderId - The ID of the order to update.
- * @param {object} orderData - The complete updated order object.
- */
-export const updateOrder = (orderId, orderData) => {
-  return apiRequest(`/orders/${orderId}`, {
-    method: 'PUT',
-    body: JSON.stringify(orderData),
-  });
-};
+export const deleteOrder = async (id) => {
+  try {
+    const api = useApi()
+    const { data } = await api.del(`/orders/${id}`)
+    return data
+  } catch (error) {
+    console.error('Error deleting order:', error)
+    throw error
+  }
+}
 
-/**
- * Deletes an order.
- * @param {number | string} orderId - The ID of the order to delete.
- */
-export const deleteOrder = (orderId) => {
-  return apiRequest(`/orders/${orderId}`, {
-    method: 'DELETE',
-  });
-}; 
+export const getOrderById = async (id) => {
+  try {
+    const api = useApi()
+    const { data } = await api.get(`/orders/${id}`)
+    return data
+  } catch (error) {
+    console.error('Error fetching order:', error)
+    throw error
+  }
+} 

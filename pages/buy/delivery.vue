@@ -1,597 +1,852 @@
 <template>
-  <v-container fluid>
-    <h2 class="text-h6 font-weight-bold mb-4" style="font-family: 'NotoSansLao-SemiCondensed'; color: #1e1e1e">
-      ຈັດການຂໍ້ມູນການນຳສົ່ງສິນຄ້າ
-    </h2>
-
+  <ModernPageLayout 
+    title="ຈັດການຂໍ້ມູນການສັ່ງຊື້"
+    subtitle="ຈັດການແລະອັບເດດສະຖານະການສັ່ງຊື້ສິນຄ້າຈາກຜູ້ສະໜອງ"
+    icon="mdi-clipboard-check"
+  >
     <v-snackbar v-model="snackbar.show" :timeout="3000" :color="snackbar.color">
       {{ snackbar.message }}
     </v-snackbar>
 
-    <v-row align="center" class="mb-4">
-      <v-col cols="12" sm="6" md="4">
+    <!-- Summary Statistics -->
+    <div class="summary-section mb-6">
+      <v-row>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#365a76">mdi-clipboard-list</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ totalOrders }}</h3>
+              <p class="stat-label">ຄຳສັ່ງຊື້ທັງໝົດ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#10b981">mdi-check-circle</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ completedOrders }}</h3>
+              <p class="stat-label">ສິນຄ້າມາຖຶງແລ້ວ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#f59e0b">mdi-clock-outline</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ pendingOrders }}</h3>
+              <p class="stat-label">ລໍຖ້າສິນຄ້າ</p>
+            </div>
+          </div>
+        </v-col>
+        <v-col cols="12" md="3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <v-icon size="32" color="#e53e3e">mdi-close-circle</v-icon>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ cancelledOrders }}</h3>
+              <p class="stat-label">ຍົກເລີກ</p>
+            </div>
+          </div>
+        </v-col>
+      </v-row>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <v-row align="center" class="mb-6">
+        <v-col cols="12" md="3">
+          <v-text-field 
+            v-model="startDate" 
+            label="ວັນທີເລີ່ມຕົ້ນ" 
+            type="date" 
+            variant="outlined"
+            density="comfortable"
+            hide-details 
+            color="#365a76"
+          />
+        </v-col>
+        <v-col cols="12" md="3">
         <v-text-field
-          v-model="search"
-          label="ຄົ້ນຫາ (ID, ຊື່ຜູ້ສະໜອງ)"
-          dense
-          outlined
+            v-model="endDate" 
+            label="ວັນທີສິ້ນສຸດ" 
+            type="date" 
+            variant="outlined"
+            density="comfortable"
           hide-details
+            color="#365a76"
         />
       </v-col>
-      <v-col cols="12" sm="6" md="3">
+        <v-col cols="12" md="3">
         <v-select
           v-model="statusFilter"
           :items="statusOptions"
-          label="ກອງຕາມສະຖານະ"
-          outlined
-          dense
+            item-title="label" 
+            item-value="value" 
+            label="ຈັງຫວະເລືອກສະຖານະ" 
+            variant="outlined"
+            density="comfortable"
+            clearable
+            hide-details 
+            color="#365a76"
+          />
+        </v-col>
+        <v-col cols="12" md="3">
+          <v-text-field 
+            v-model="search" 
+            label="ຄົ້ນຫາ (ຜູ້ສະໜອງ, ຄຳສັ່ງ)" 
+            variant="outlined"
+            density="comfortable"
           hide-details
+            prepend-inner-icon="mdi-magnify" 
+            color="#365a76"
           clearable
         />
       </v-col>
-      <v-spacer />
-      <v-col cols="auto">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-          + ເພີ່ມໃບນຳສົ່ງ
-        </v-btn>
-      </v-col>
     </v-row>
-    
-    <div v-if="isLoading" class="text-center py-10">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <p class="mt-4">ກຳລັງໂຫລດຂໍ້ມູນ...</p>
     </div>
 
-    <v-data-table
-      v-else
-      :headers="headers"
-      :items="paginatedInvoices"
-      :items-per-page="-1"
-      hide-default-footer
-      class="elevation-1"
-      item-value="Inv_ID"
-    >
-      <template #[`item.index`]="{ index }">
-        {{ (page - 1) * itemsPerPage + index + 1 }}
-      </template>
-
-      <template #[`item.Inv_Date`]="{ item }">
-        {{ formatDate(item.Inv_Date) }}
-      </template>
-      
-      <template #[`item.Total_Price`]="{ item }">
-        {{ formatCurrency(item.Total_Price) }}
-      </template>
-
-      <template #[`item.Status`]="{ item }">
-        <v-chip :color="getStatusColor(item.Status)" class="text-white" dark small>
-          {{ item.Status }}
+    <!-- Modern Data Table -->
+    <div class="table-container">
+      <v-table class="modern-table elevation-2">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ລະຫັດຄຳສັ່ງ</th>
+            <th>ຜູ້ສະໜອງ</th>
+            <th>ວັນທີສັ່ງ</th>
+            <th>ຈຳນວນລາຍການ</th>
+            <th>ສະຖານະ</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoading">
+            <td colspan="7" class="text-center py-8">
+              <v-progress-circular indeterminate color="#365a76" />
+              <div class="mt-2">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+            </td>
+          </tr>
+          <tr v-else-if="paginatedOrders.length === 0">
+            <td colspan="7" class="text-center py-8">
+              <div class="text-grey">ບໍ່ມີຂໍ້ມູນການສັ່ງຊື້</div>
+            </td>
+          </tr>
+          <tr v-else v-for="(order, index) in paginatedOrders" :key="order.Order_ID">
+            <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
+            <td>
+              <v-chip color="#365a76" variant="flat" size="small">
+                #{{ order.Order_ID }}
+              </v-chip>
+            </td>
+            <td>{{ order.Tb_Supplier?.Sup_name || 'ບໍ່ລະບຸ' }}</td>
+            <td>{{ formatDate(order.Order_Date) }}</td>
+            <td class="text-center">
+              <v-chip color="info" variant="tonal" size="small">
+                {{ order.products?.length || 0 }} ລາຍການ
+              </v-chip>
+            </td>
+            <td>
+              <v-chip 
+                :color="getStatusColor(order.status)" 
+                variant="flat" 
+                size="small"
+              >
+                {{ order.status }}
         </v-chip>
-      </template>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <v-tooltip text="ລາຍລະອຽດ" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="info"
+                      @click="onViewDetails(order)"
+                      class="action-btn"
+                    >
+                      <v-icon>mdi-eye</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                
+                <v-tooltip text="ອັບເດດສະຖານະ" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      icon
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      @click="onUpdateStatus(order)"
+                      class="action-btn"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
 
-      <template #[`item.actions`]="{ item }">
-        <div class="d-flex align-center justify-center">
-          <v-icon size="small" color="info" class="mr-2" @click="openViewDialog(item)">mdi-eye</v-icon>
-          <v-icon size="small" color="primary" class="mr-2" @click="openEditDialog(item)">mdi-pencil</v-icon>
-          <v-tooltip text="ຍົກເລີກໃບນຳສົ່ງ">
-            <template v-slot:activator="{ props }">
-              <v-icon v-bind="props" size="small" color="error" @click="openDeleteDialog(item)">mdi-cancel</v-icon>
-            </template>
-          </v-tooltip>
-        </div>
-      </template>
-       <template #no-data>
-        <div class="text-center py-4">
-          <v-icon size="48" color="grey-lighten-2" class="mb-2">mdi-receipt-text-remove-outline</v-icon>
-          <p class="text-h6 text-grey-lighten-1">ຍັງບໍ່ມີຂໍ້ມູນການນຳສົ່ງສິນຄ້າ</p>
-        </div>
-      </template>
-    </v-data-table>
-
-    <!-- Enhanced Pagination -->
-    <div v-if="!isLoading && filteredInvoices.length > 0" class="d-flex justify-center align-center mt-4">
+    <!-- Modern Pagination -->
+      <div v-if="!isLoading && orders.length > 0" class="pagination-container">
+        <v-card class="pagination-card" elevation="1">
+          <v-card-text class="pa-4">
+            <div class="pagination-content">
+              <div class="pagination-info">
+                <span class="pagination-text">
+                  ສະແດງ {{ ((currentPage - 1) * itemsPerPage) + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredOrders.length) }} 
+                  ຈາກ {{ filteredOrders.length }} ຄຳສັ່ງ
+                </span>
+              </div>
+              
+              <div class="pagination-controls">
       <v-pagination
-        v-model="page"
-        :length="Math.ceil(filteredInvoices.length / itemsPerPage)"
-        :total-visible="7"
-      >
-        <template #prev="{ props }">
-          <v-btn
-            variant="text"
-            v-bind="props"
-            class="px-0"
-            @click="goToPreviousPage"
-          >
-            <v-img
-              src="/icons/Arrow.png"
-              width="20"
-              height="20"
-              style="transform: rotate(90deg);"
-              class="cursor-pointer"
-            />
-          </v-btn>
-        </template>
-        <template #next="{ props }">
-          <v-btn
-            variant="text"
-            v-bind="props"
-            class="px-0"
-            @click="goToNextPage"
-          >
-            <v-img
-              src="/icons/Arrow.png"
-              width="20"
-              height="20"
-              style="transform: rotate(270deg);"
-              class="cursor-pointer"
-            />
-          </v-btn>
-        </template>
-      </v-pagination>
-
-      <!-- More Pages Menu -->
-      <v-menu
-        v-model="pageMenu"
-        :close-on-content-click="true"
-        location="bottom end"
-      >
-        <template v-slot:activator="{ props }">
-          <v-btn
-            icon
-            v-bind="props"
-            class="ml-2"
-          >
-            <v-img
-              src="/icons/more.png"
-              width="24"
-              height="24"
-              class="cursor-pointer"
-            />
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item
-            v-for="n in Math.ceil(filteredInvoices.length / itemsPerPage)"
-            :key="n"
-            :value="n"
-            @click="page = n"
-          >
-            <v-list-item-title>ໜ້າ {{ n }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+          v-model="currentPage"
+          :length="Math.ceil(filteredOrders.length / itemsPerPage)"
+                  :total-visible="5"
+                  class="custom-pagination"
+                  size="small"
+                />
+              </div>
+              
+              <div class="pagination-settings">
+                <v-select
+                  v-model="itemsPerPage"
+                  :items="[5, 10, 15, 20]"
+                  label="ລາຍການຕໍ່ໜ້າ"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="items-per-page-select"
+                />
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
     </div>
 
-    <!-- Add/Edit Dialog -->
-    <v-dialog v-model="addDialog" max-width="700px" persistent>
-      <v-card>
+    <!-- Status Update Dialog -->
+    <v-dialog v-model="statusDialog" max-width="500px" persistent>
+      <v-card class="modern-dialog">
         <v-card-title class="dialog-title">
-         ເພີ່ມໃບນຳສົ່ງ
+          ອັບເດດສະຖານະການສັ່ງຊື້
         </v-card-title>
-        <v-card-text>
-          <v-form ref="formRef" v-model="formValid">
-            <v-row>
-              <v-col cols="12" md="6">
+        <v-card-text class="pa-6">
+          <div class="mb-4">
+            <strong>ລະຫັດຄຳສັ່ງ:</strong> #{{ selectedOrder?.Order_ID }}
+          </div>
+          <div class="mb-4">
+            <strong>ຜູ້ສະໜອງ:</strong> {{ selectedOrder?.Tb_Supplier?.Sup_name || 'ບໍ່ລະບຸ' }}
+          </div>
                 <v-select
-                  v-model="form.orderId"
-                  :items="pendingOrders"
-                  item-title="Order_ID"
-                  item-value="Order_ID"
-                  label="ເລືອກອໍເດີທີ່ຕ້ອງການຮັບ"
-                  outlined dense
-                  :rules="[rules.required]"
-                  @update:modelValue="onOrderSelected"
-                >
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props" :title="`ອໍເດີ #${item.raw.Order_ID} - ${item.raw.Sup_name}`" />
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="form.invoiceDate"
-                  label="ວັນທີຮັບສິນຄ້າ"
-                  type="date"
-                  outlined dense
-                  :rules="[rules.required]"
-                />
-              </v-col>
-            </v-row>
-            <div v-if="selectedOrderDetails" class="mt-4 pa-3 border rounded">
-                <h3 class="text-subtitle-1">ລາຍລະອຽດອໍເດີ #{{ selectedOrderDetails.Order_ID }}</h3>
-                <p><strong>ຜູ່ສະໜອງ:</strong> {{ selectedOrderDetails.Sup_name }}</p>
-                <p><strong>ລວມທັງໝົດ:</strong> {{ formatCurrency(selectedOrderDetails.products.reduce((acc, p) => acc + p.buyPrice * p.quantity, 0)) }}</p>
-                <v-table density="compact" class="mt-2">
-                    <thead>
-                        <tr><th>ສິນຄ້າ</th><th>ຈຳນວນ</th><th>ລາຄາຊື້</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="p in selectedOrderDetails.products" :key="p.id">
-                            <td>{{ p.Pd_name }}</td>
-                            <td>{{ p.quantity }}</td>
-                            <td>{{ formatCurrency(p.buyPrice) }}</td>
-                        </tr>
-                    </tbody>
-                </v-table>
+            v-model="newStatus"
+            :items="orderStatusOptions"
+            item-title="label"
+            item-value="value"
+            label="ເລືອກສະຖານະໃໝ່"
+            variant="outlined"
+            density="comfortable"
+            color="#365a76"
+          />
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer />
+          <ModernButton 
+            variant="error"
+            @click="statusDialog = false" 
+          >
+            ຍົກເລີກ
+          </ModernButton>
+          <ModernButton 
+            variant="primary"
+            @click="updateStatus" 
+            :loading="isUpdating"
+          >
+            ອັບເດດ
+          </ModernButton>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Details Dialog -->
+    <v-dialog v-model="detailsDialog" max-width="800px" persistent>
+      <v-card class="modern-dialog">
+        <v-card-title class="dialog-title">
+          ລາຍລະອຽດການສັ່ງຊື້
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <v-row v-if="selectedOrder">
+            <v-col cols="12" md="6">
+              <div class="detail-item">
+                <strong>ລະຫັດຄຳສັ່ງ:</strong> #{{ selectedOrder.Order_ID }}
+                    </div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="detail-item">
+                <strong>ຜູ້ສະໜອງ:</strong> {{ selectedOrder.Tb_Supplier?.Sup_name || 'ບໍ່ລະບຸ' }}
+                </div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="detail-item">
+                <strong>ວັນທີສັ່ງ:</strong> {{ formatDate(selectedOrder.Order_Date) }}
             </div>
-          </v-form>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="detail-item">
+                <strong>ຈຳນວນລາຍການ:</strong> {{ selectedOrder.products?.length || 0 }} ລາຍການ
+                    </div>
+            </v-col>
+            <v-col cols="12">
+              <div class="detail-item">
+                <strong>ສະຖານະ:</strong>
+                <v-chip 
+                  :color="getStatusColor(selectedOrder.status)" 
+                  variant="flat" 
+                  size="small"
+                >
+                  {{ selectedOrder.status }}
+                        </v-chip>
+                    </div>
+            </v-col>
+            <v-col cols="12" v-if="selectedOrder.products?.length > 0">
+              <div class="detail-item">
+                <strong>ລາຍການສິນຄ້າ:</strong>
+                <div class="mt-2">
+                  <v-chip 
+                    v-for="(product, index) in selectedOrder.products" 
+                    :key="index"
+                    color="info"
+                    variant="tonal"
+                    size="small"
+                    class="ma-1"
+                  >
+                    {{ product.Pd_name || product.name }} ({{ product.quantity }}x)
+                  </v-chip>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="pa-6 pt-0">
           <v-spacer />
-          <v-btn class="btn-cancel" text @click="addDialog = false" :disabled="isSaving">ຍົກເລີກ</v-btn>
-          <v-btn class="btn-save" @click="saveInvoice" :loading="isSaving" :disabled="!formValid">ບັນທຶກ</v-btn>
+          <ModernButton 
+            variant="primary"
+            @click="detailsDialog = false" 
+          >
+            ປິດ
+          </ModernButton>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- View Details Dialog -->
-    <v-dialog v-model="viewDialog" max-width="800px">
-        <v-card>
-            <v-card-title class="dialog-title">ລາຍລະອຽດໃບນຳສົ່ງ #{{ selectedInvoice?.Inv_ID }}</v-card-title>
-            <v-card-text v-if="selectedInvoice">
-                <v-row>
-                    <v-col cols="12" md="6">
-                <p><strong>ID ໃບນຳສົ່ງ:</strong> {{ selectedInvoice.Inv_ID }}</p>
-                <p><strong>ID ອໍເດີ:</strong> {{ selectedInvoice.Order_ID }}</p>
-                        <p><strong>ຜູ່ສະໜອງ:</strong> {{ selectedInvoice.Sup_name }}</p>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                <p><strong>ວັນທີຮັບ:</strong> {{ formatDate(selectedInvoice.Inv_Date) }}</p>
-                <p><strong>ສະຖານະ:</strong> <v-chip :color="getStatusColor(selectedInvoice.Status)" size="small">{{ selectedInvoice.Status }}</v-chip></p>
-                <p><strong>ຍອດລວມ:</strong> {{ formatCurrency(selectedInvoice.Total_Price) }}</p>
-                    </v-col>
-                </v-row>
-
-                 <h3 class="text-subtitle-1 mt-4">ລາຍການສິນຄ້າ</h3>
-                <v-table density="compact" class="mt-2">
-                    <thead>
-                        <tr>
-                            <th class="text-left">ຊື່ສິນຄ້າ</th>
-                            <th class="text-right">ນ້ຳໜັກ(g)</th>
-                            <th class="text-right">ຈຳນວນ</th>
-                            <th class="text-right">ລາຄາຊື້</th>
-                            <th class="text-right">ສ່ວນຫຼຸດ</th>
-                            <th class="text-right">ລວມ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="p in selectedInvoice.products" :key="p.Pd_ID">
-                            <td class="text-left">{{ p.Pd_name }}</td>
-                            <td class="text-right">{{ p.weight }}</td>
-                            <td class="text-right">{{ p.quantity }}</td>
-                            <td class="text-right">{{ formatCurrency(p.buyPrice) }}</td>
-                            <td class="text-right">{{ formatCurrency(p.discount) }}</td>
-                            <td class="text-right">{{ formatCurrency((p.buyPrice * p.quantity) - p.discount) }}</td>
-                        </tr>
-                    </tbody>
-                </v-table>
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer />
-                <v-btn color="primary" @click="viewDialog = false">ປິດ</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
-    
-    <!-- Edit Dialog -->
-    <v-dialog v-model="editDialog" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="dialog-title">ແກ້ໄຂໃບນຳສົ່ງ #{{ form.Inv_ID }}</v-card-title>
-        <v-card-text>
-          <v-form ref="editFormRef" v-model="editFormValid">
-            <v-text-field
-              v-model="form.invoiceDate"
-              label="ວັນທີຮັບສິນຄ້າ"
-              type="date"
-              outlined dense
-              class="mb-4"
-              :rules="[rules.required]"
-            />
-            <v-select
-              v-model="form.status"
-              :items="invoiceStatusOptions"
-              label="ສະຖານະ"
-              outlined dense
-              :rules="[rules.required]"
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn class="btn-cancel" text @click="editDialog = false" :disabled="isSaving">ຍົກເລີກ</v-btn>
-          <v-btn class="btn-save" @click="saveEdit" :loading="isSaving" :disabled="!editFormValid">ບັນທຶກ</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog" max-width="400px" persistent>
-        <v-card>
-            <v-card-title class="dialog-title">ຢືນຢັນການຍົກເລີກ</v-card-title>
-            <v-card-text>
-                ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຍົກເລີກໃບນຳສົ່ງ #{{ selectedInvoice?.Inv_ID }}? <br/>
-                ການກະທຳນີ້ຈະປ່ຽນສະຖານະອໍເດີຄືນເປັນ "Pending".
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer />
-                <v-btn class="btn-cancel" @click="deleteDialog = false" :disabled="isSaving">ບໍ່</v-btn>
-                <v-btn color="error" @click="confirmDelete" :loading="isSaving">ແມ່ນ, ຍົກເລີກ</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
-
-
-  </v-container>
+  </ModernPageLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { fetchInvoices, createInvoice, fetchPendingOrders, updateInvoice, deleteInvoice } from '~/services/invoiceApi';
-import { fetchOrders } from '~/services/orderApi';
+import { ref, computed, onMounted } from 'vue';
+import { useApi } from '~/composables/useApi';
 
-const isLoading = ref(true);
-const isSaving = ref(false);
-const snackbar = ref({ show: false, message: '', color: 'success' });
+const { get: apiGet, put: apiPut } = useApi();
+
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'success'
+});
+
+const isLoading = ref(false);
+const isUpdating = ref(false);
+
+// Filters
+const startDate = ref('');
+const endDate = ref('');
+const statusFilter = ref('');
 const search = ref('');
-const statusFilter = ref(null);
-const page = ref(1);
+
+// Pagination
+const currentPage = ref(1);
 const itemsPerPage = ref(10);
-const pageMenu = ref(false);
 
-const invoices = ref([]);
-const pendingOrders = ref([]);
-const addDialog = ref(false);
-const editDialog = ref(false);
-const viewDialog = ref(false);
-const deleteDialog = ref(false);
+// Dialogs
+const statusDialog = ref(false);
+const detailsDialog = ref(false);
+const selectedOrder = ref(null);
+const newStatus = ref('');
 
-const form = ref({});
-const formRef = ref(null);
-const formValid = ref(false);
-const editFormRef = ref(null);
-const editFormValid = ref(false);
+// Status options ตรงกับ orders.vue
+const statusOptions = ref([
+  { label: 'ທັງໝົດ', value: '' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'Cancelled', value: 'Cancelled' }
+]);
 
-const selectedInvoice = ref(null);
-const selectedOrderDetails = ref(null);
+const orderStatusOptions = ref([
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Completed', value: 'Completed' },
+  { label: 'Cancelled', value: 'Cancelled' }
+]);
 
-const statusOptions = ['Pending', 'Completed', 'Cancelled'];
-const invoiceStatusOptions = ['Pending', 'Completed', 'Cancelled'];
+// Data from API
+const orders = ref([]);
 
-const rules = {
-  required: v => !!v || 'Required.'
-};
+// Computed properties
+const totalOrders = computed(() => orders.value.length);
+const completedOrders = computed(() => orders.value.filter(o => o.status === 'Completed').length);
+const pendingOrders = computed(() => orders.value.filter(o => o.status === 'Pending').length);
+const cancelledOrders = computed(() => orders.value.filter(o => o.status === 'Cancelled').length);
 
-const headers = [
-  { title: 'ລຳດັບ', value: 'index', sortable: false },
-  { title: 'ID ໃບນຳສົ່ງ', value: 'Inv_ID' },
-  { title: 'ID ອໍເດີ', value: 'Order_ID' },
-  { title: 'ຜູ່ສະໜອງ', value: 'Sup_name' },
-  { title: 'ວັນທີຮັບ', value: 'Inv_Date' },
-  { title: 'ຍອດລວມ', value: 'Total_Price' },
-  { title: 'ສະຖານະ', value: 'Status' },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
-];
-
-const showSnackbar = (message, color = 'success') => {
-  snackbar.value = { show: true, message, color };
-};
-
-const formatCurrency = (value) => {
-  if (value == null) return '0';
-  return new Intl.NumberFormat('lo-LA').format(value);
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-CA'); // YYYY-MM-DD
-};
-
-const getStatusColor = (status) => {
-  const map = { 
-    'Completed': 'green', 
-    'SENT': 'green', // Keep SENT for backward compatibility if needed
-    'Pending': 'orange', 
-    'PENDING': 'orange',
-    'Cancelled': 'red',
-    'CANCELED': 'red' 
-  };
-  return map[status] || 'grey';
-};
-
-const validateForm = () => {
-  return formRef.value.validate();
-};
-
-const filteredInvoices = computed(() => {
-  let filtered = invoices.value;
-
-  // Filter by search term
-  if (search.value) {
-    const searchTerm = search.value.toLowerCase();
-    filtered = filtered.filter(inv =>
-      inv.Sup_name?.toLowerCase().includes(searchTerm) ||
-    inv.Inv_ID.toString().includes(search.value)
-  );
+const filteredOrders = computed(() => {
+  let filtered = orders.value;
+  
+  // Filter by date
+  if (startDate.value) {
+    filtered = filtered.filter(o => o.Order_Date >= startDate.value);
   }
-
+  if (endDate.value) {
+    filtered = filtered.filter(o => o.Order_Date <= endDate.value);
+  }
+  
   // Filter by status
   if (statusFilter.value) {
-    filtered = filtered.filter(inv => inv.Status === statusFilter.value);
+    filtered = filtered.filter(o => o.status === statusFilter.value);
   }
-
+  
+  // Filter by search
+  if (search.value) {
+    const searchLower = search.value.toLowerCase();
+    filtered = filtered.filter(o => 
+      (o.Tb_Supplier?.Sup_name || '').toLowerCase().includes(searchLower) ||
+      o.Order_ID.toString().includes(searchLower)
+    );
+  }
+  
   return filtered;
 });
 
-const paginatedInvoices = computed(() => {
-  const start = (page.value - 1) * itemsPerPage.value;
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
-  return filteredInvoices.value.slice(start, end);
+  return filteredOrders.value.slice(start, end);
 });
 
-const loadInitialData = async () => {
-  isLoading.value = true;
+// Methods
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('lo-LA');
+};
+
+const getStatusColor = (status) => {
+  const colors = {
+    'Pending': 'orange',
+    'Completed': 'green',
+    'Cancelled': 'red'
+  };
+  return colors[status] || 'grey';
+};
+
+const fetchOrders = async () => {
   try {
-    const [invoicesResponse, ordersResponse] = await Promise.all([
-      fetchInvoices(),
-      fetchOrders(),
-    ]);
-
-    const invoicesData = invoicesResponse || []; 
+    isLoading.value = true;
+    const response = await apiGet('/orders');
     
-    const ordersData = ordersResponse?.orders || []; 
-
-    const ordersMap = new Map(ordersData.map(order => [order.Order_ID, order.Sup_name]));
-
-    invoices.value = invoicesData.map(invoice => ({
-      ...invoice,
-      Sup_name: ordersMap.get(invoice.Order_ID) || 'N/A',
-    }));
-
+    if (response && response.orders) {
+      orders.value = response.orders;
+    } else if (Array.isArray(response)) {
+      orders.value = response;
+    } else {
+      orders.value = [];
+    }
   } catch (error) {
-    showSnackbar(error.message || 'Failed to load data', 'error');
-    console.error("Error fetching initial data in delivery.vue:", error);
+    console.error('Error fetching orders:', error);
+    snackbar.value = {
+      show: true,
+      message: 'ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນ',
+      color: 'error'
+    };
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(loadInitialData);
+const onUpdateStatus = (order) => {
+  selectedOrder.value = order;
+  newStatus.value = order.status;
+  statusDialog.value = true;
+};
 
-// Watch for filter changes to reset pagination
-watch([search, statusFilter], () => {
-  page.value = 1;
-});
+const onViewDetails = (order) => {
+  selectedOrder.value = order;
+  detailsDialog.value = true;
+};
 
-// Pagination Navigation Functions
-function goToPreviousPage() {
-  if (page.value > 1) {
-    page.value--;
-  }
-}
-
-function goToNextPage() {
-  const totalPages = Math.ceil(filteredInvoices.value.length / itemsPerPage.value);
-  if (page.value < totalPages) {
-    page.value++;
-  }
-}
-
-// --- Add Dialog Logic ---
-const resetAddForm = () => {
-  form.value = {
-    orderId: null,
-    invoiceDate: new Date().toISOString().split('T')[0]
-  };
-  selectedOrderDetails.value = null;
-  formRef.value?.resetValidation();
-}
-
-const openAddDialog = async () => {
-  resetAddForm();
-  isSaving.value = true; // Show loading state while fetching
+const updateStatus = async () => {
   try {
-    const response = await fetchPendingOrders();
-    pendingOrders.value = response?.orders || [];
+    isUpdating.value = true;
     
-    if (pendingOrders.value.length === 0) {
-      showSnackbar('ບໍ່ມີອໍເດີທີ່ລໍຖ້າການນຳສົ່ງ', 'info');
-      return; // Stop if no pending orders
+    // ส่งข้อมูลครบถ้วนตาม API requirement
+    const payload = {
+      Order_Date: selectedOrder.value.Order_Date,
+      Sup_ID: selectedOrder.value.Sup_ID,
+      status: newStatus.value,
+      products: selectedOrder.value.products?.map(p => ({
+        id: p.Pd_ID || p.id,
+        quantity: p.quantity || 1,
+        buyPrice: p.buyPrice || ((p.goldValue || 0) + (p.craftsmanshipFee || 0)),
+        discount: p.discount || 0
+      })) || []
+    };
+    
+    const response = await apiPut(`/orders/${selectedOrder.value.Order_ID}`, payload);
+    
+    if (response) {
+      // Update local data
+      const index = orders.value.findIndex(o => o.Order_ID === selectedOrder.value.Order_ID);
+      if (index !== -1) {
+        orders.value[index].status = newStatus.value;
+      }
+      
+      statusDialog.value = false;
+      snackbar.value = {
+        show: true,
+        message: 'ອັບເດດສະຖານະສຳເລັດ',
+        color: 'success'
+      };
     }
-    
-    addDialog.value = true;
   } catch (error) {
-    showSnackbar(error.message || 'Failed to fetch pending orders.', 'error');
-    console.error("Error fetching pending orders in delivery.vue:", error);
+    console.error('Error updating status:', error);
+    snackbar.value = {
+      show: true,
+      message: 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ',
+      color: 'error'
+    };
   } finally {
-    isSaving.value = false; // Hide loading state
+    isUpdating.value = false;
   }
-}
+};
 
-const onOrderSelected = (orderId) => {
-  selectedOrderDetails.value = pendingOrders.value.find(o => o.Order_ID === orderId);
-}
-
-const saveInvoice = async () => {
-  if (!validateForm()) return;
-  isSaving.value = true;
-  try {
-    console.log('saveInvoice: payload being sent', form.value);
-    await createInvoice(form.value);
-    showSnackbar('ສ້າງໃບນຳສົ່ງສຳເລັດ', 'success');
-    addDialog.value = false;
-    await loadInitialData();
-  } catch (error) {
-     showSnackbar(error.message, 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-// --- View Dialog Logic ---
-const openViewDialog = (item) => {
-    selectedInvoice.value = item;
-    viewDialog.value = true;
-}
-
-// --- Edit Dialog Logic ---
-const openEditDialog = (item) => {
-  form.value = {
-    Inv_ID: item.Inv_ID,
-    invoiceDate: formatDate(item.Inv_Date),
-    status: item.Status
-  };
-  editFormRef.value?.resetValidation();
-  editDialog.value = true;
-}
-
-const saveEdit = async () => {
-  editFormRef.value.validate();
-  if(!editFormValid.value) return;
-
-  isSaving.value = true;
-  try {
-    await updateInvoice(form.value.Inv_ID, {
-      invoiceDate: form.value.invoiceDate,
-      status: form.value.status
-    });
-    showSnackbar('ອັບເດດສຳເລັດ', 'success');
-    editDialog.value = false;
-    await loadInitialData();
-  } catch (error) {
-    showSnackbar(error.message, 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-// --- Delete Dialog Logic ---
-const openDeleteDialog = (item) => {
-  selectedInvoice.value = item;
-  deleteDialog.value = true;
-}
-
-const confirmDelete = async () => {
-  isSaving.value = true;
-  try {
-    await deleteInvoice(selectedInvoice.value.Inv_ID);
-    showSnackbar('ຍົກເລີກໃບນຳສົ່ງສຳເລັດ', 'success');
-    deleteDialog.value = false;
-    await loadInitialData();
-  } catch (error) {
-    showSnackbar(error.message, 'error');
-  } finally {
-    isSaving.value = false;
-  }
-}
-
+// Load data on mount
+onMounted(() => {
+  fetchOrders();
+});
 </script>
 
 <style scoped>
-.dialog-title { background-color: #365a76; color: white; font-weight: bold; }
-.btn-cancel { background-color: #f44336 !important; color: white !important; }
-.btn-save { background-color: #4caf50 !important; color: white !important; }
-.border {
-  border: 1px solid #e0e0e0;
+/* Summary Cards */
+.summary-section {
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(54, 90, 118, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  background: rgba(54, 90, 118, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #365a76;
+  margin: 0 0 4px 0;
+}
+
+.stat-label {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Filters Section */
+.filters-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(54, 90, 118, 0.1);
+}
+
+/* Table Container */
+.table-container {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(54, 90, 118, 0.1);
+}
+
+.modern-table {
+  background: white;
+}
+
+.modern-table thead th {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%);
+  color: white;
+  font-weight: 600;
+  padding: 16px 20px;
+  border: none;
+  text-transform: none !important;
+}
+
+.modern-table tbody tr {
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modern-table tbody tr:hover {
+  background: rgba(54, 90, 118, 0.05);
+}
+
+.modern-table tbody td {
+  padding: 16px 20px;
+  vertical-align: middle;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-btn {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Pagination */
+.pagination-container {
+  margin-top: 24px;
+}
+
+.pagination-card {
+  border-radius: 12px;
+  border: 1px solid rgba(54, 90, 118, 0.1);
+}
+
+.pagination-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pagination-info {
+  flex: 1;
+}
+
+.pagination-text {
+  color: #666;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.pagination-settings {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.items-per-page-select {
+  max-width: 140px;
+}
+
+.custom-pagination {
+  --v-pagination-border-radius: 8px;
+}
+
+/* Dialog Styles */
+.modern-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.dialog-title {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%);
+  color: white;
+  font-weight: 600;
+  padding: 20px 24px;
+  border: none;
+}
+
+.detail-item {
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.detail-item strong {
+  color: #365a76;
+  font-weight: 600;
+}
+
+/* Dark Mode Support */
+.v-theme--dark .stat-card {
+  background: #1e1e1e;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.v-theme--dark .stat-icon {
+  background: rgba(54, 90, 118, 0.2);
+}
+
+.v-theme--dark .stat-number {
+  color: #64b5f6;
+}
+
+.v-theme--dark .stat-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.v-theme--dark .filters-section,
+.v-theme--dark .table-container {
+  background: #1e1e1e;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.v-theme--dark .modern-table {
+  background: #1e1e1e;
+}
+
+.v-theme--dark .modern-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1e1e1e;
+}
+
+.v-theme--dark .modern-table tbody td {
+  background: #1e1e1e;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.v-theme--dark .modern-table tbody tr:hover {
+  background: rgba(54, 90, 118, 0.2);
+}
+
+.v-theme--dark .pagination-card {
+  background: #1e1e1e;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.v-theme--dark .pagination-text {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.v-theme--dark .modern-dialog {
+  background: #1e1e1e;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.v-theme--dark .detail-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v-theme--dark .detail-item strong {
+  color: #64b5f6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .stat-icon {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 12px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .pagination-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .pagination-info,
+  .pagination-controls,
+  .pagination-settings {
+    flex: none;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* Mobile responsive for table */
+@media (max-width: 768px) {
+  .modern-table {
+    font-size: 0.85rem;
+  }
+  
+  .modern-table thead th,
+  .modern-table tbody td {
+    padding: 12px 8px;
+  }
 }
 </style> 

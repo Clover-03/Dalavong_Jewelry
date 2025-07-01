@@ -30,4 +30,25 @@ export default {
   },
   emits: ['update:visible', 'confirm'],
 };
-</script> 
+</script>
+
+<style scoped>
+/* Dark Mode Support for ConfirmDialog */
+.v-theme--dark .v-card {
+  background: #1e1e1e !important;
+}
+
+.v-theme--dark .v-card-title {
+  background: linear-gradient(135deg, #365a76 0%, #2c4960 100%) !important;
+  color: white !important;
+}
+
+.v-theme--dark .v-card-text {
+  background: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.v-theme--dark .v-card-actions {
+  background: #2a2a2a !important;
+}
+</style>

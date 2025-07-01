@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { useApi } from '~/composables/useApi'
+
+const API_BASE_URL = 'http://localhost:4444/api';
 
 /**
  * A generic helper function for API requests.
@@ -20,7 +22,20 @@ const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Request failed: ${response.status}`);
+      
+      // Handle token expiration
+      if (errorData.code === 'TOKEN_EXPIRED' || 
+          errorData.code === 'INVALID_TOKEN' || 
+          errorData.code === 'NO_TOKEN') {
+        localStorage.removeItem('token');
+        if (window.location.pathname !== '/login') {
+          console.log('Token expired, redirecting to login...');
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
+      throw new Error(errorData.error || errorData.message || `Request failed: ${response.status}`);
     }
 
     if (response.status === 204) {
@@ -36,26 +51,44 @@ const apiRequest = async (endpoint, options = {}) => {
 /**
  * Fetches all prices. (Requires auth)
  */
-export const fetchPrices = () => {
-  return apiRequest('/prices');
+export const fetchPrices = async (searchParams = {}) => {
+  try {
+    const api = useApi()
+    const response = await api.get('/prices', searchParams)
+    return response?.data || response || []
+  } catch (error) {
+    console.error('Error fetching prices:', error)
+    throw error
+  }
 };
 
 /**
  * Fetches the latest price. (Public)
  */
-export const fetchLatestPrice = () => {
-  return apiRequest('/prices/latest');
+export const fetchLatestPrice = async () => {
+  try {
+    const api = useApi()
+    const response = await api.get('/prices/latest')
+    return response?.data || response || null
+  } catch (error) {
+    console.error('Error fetching latest price:', error)
+    throw error
+  }
 };
 
 /**
  * Creates a new price entry. (Requires auth)
  * @param {object} priceData - The price data to create.
  */
-export const createPrice = (priceData) => {
-  return apiRequest('/prices', {
-    method: 'POST',
-    body: JSON.stringify(priceData),
-  });
+export const createPrice = async (priceData) => {
+  try {
+    const api = useApi()
+    const response = await api.post('/prices', priceData)
+    return response?.data || response || null
+  } catch (error) {
+    console.error('Error creating price:', error)
+    throw error
+  }
 };
 
 /**
@@ -63,19 +96,28 @@ export const createPrice = (priceData) => {
  * @param {number | string} priceId - The ID of the price to update.
  * @param {object} priceData - The updated price data.
  */
-export const updatePrice = (priceId, priceData) => {
-  return apiRequest(`/prices/${priceId}`, {
-    method: 'PUT',
-    body: JSON.stringify(priceData),
-  });
+export const updatePrice = async (id, priceData) => {
+  try {
+    const api = useApi()
+    const response = await api.put(`/prices/${id}`, priceData)
+    return response?.data || response || null
+  } catch (error) {
+    console.error('Error updating price:', error)
+    throw error
+  }
 };
 
 /**
  * Deletes a price entry. (Requires auth)
  * @param {number | string} priceId - The ID of the price to delete.
  */
-export const deletePrice = (priceId) => {
-  return apiRequest(`/prices/${priceId}`, {
-    method: 'DELETE',
-  });
+export const deletePrice = async (id) => {
+  try {
+    const api = useApi()
+    const response = await api.del(`/prices/${id}`)
+    return response?.data || response || null
+  } catch (error) {
+    console.error('Error deleting price:', error)
+    throw error
+  }
 }; 

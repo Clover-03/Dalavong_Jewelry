@@ -9,15 +9,28 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
+  "prisma": {
+    "schema": "server/server/prisma/schema.prisma"
+  },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "@nuxt/eslint": "^1.4.1",
     "@nuxt/icon": "^1.14.0",
     "@nuxt/image": "^1.10.0",
     "axios": "^1.10.0",
+    "bcryptjs": "^3.0.2",
+    "chart.js": "^4.5.0",
     "eslint": "^9.29.0",
+    "jsonwebtoken": "^9.0.2",
     "nuxt": "^3.17.5",
     "vue": "^3.5.16",
     "vue-router": "^4.5.1",
-    "vuetify-nuxt-module": "^0.18.7"
+    "vuetify-nuxt-module": "^0.18.7",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.10.1",
+    "prisma": "^6.10.1",
+    "sass-embedded": "^1.89.2"
   }
 }

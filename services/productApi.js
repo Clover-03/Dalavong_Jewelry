@@ -1,46 +1,57 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// Product API Services
+import { useApi } from '~/composables/useApi'
 
-const apiRequest = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+export const fetchProducts = async (searchParams = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Request failed: ${response.status}`);
-    }
-    if (response.status === 204) return null;
-    return response.json();
+    const api = useApi()
+    const { data } = await api.get('/public/products', searchParams)
+    return data
   } catch (error) {
-    console.error(`API request to ${endpoint} failed:`, error);
-    throw new Error(error.message || 'An unexpected API error occurred.');
+    console.error('Error fetching products:', error)
+    throw error
   }
-};
+}
 
-export const fetchProducts = () => apiRequest('/products');
+export const createProduct = async (productData) => {
+  try {
+    const api = useApi()
+    const { data } = await api.post('/products', productData)
+    return data
+  } catch (error) {
+    console.error('Error creating product:', error)
+    throw error
+  }
+}
 
-export const createProduct = (productData) => {
-  return apiRequest('/products', {
-    method: 'POST',
-    body: JSON.stringify(productData),
-  });
-};
+export const updateProduct = async (id, productData) => {
+  try {
+    const api = useApi()
+    const { data } = await api.put(`/products/${id}`, productData)
+    return data
+  } catch (error) {
+    console.error('Error updating product:', error)
+    throw error
+  }
+}
 
-export const updateProduct = (productId, productData) => {
-  return apiRequest(`/products/${productId}`, {
-    method: 'PUT',
-    body: JSON.stringify(productData),
-  });
-};
+export const deleteProduct = async (id) => {
+  try {
+    const api = useApi()
+    const { data } = await api.del(`/products/${id}`)
+    return data
+  } catch (error) {
+    console.error('Error deleting product:', error)
+    throw error
+  }
+}
 
-export const deleteProduct = (productId) => {
-  return apiRequest(`/products/${productId}`, {
-    method: 'DELETE',
-  });
-}; 
+export const getProductById = async (id) => {
+  try {
+    const api = useApi()
+    const { data } = await api.get(`/products/${id}`)
+    return data
+  } catch (error) {
+    console.error('Error fetching product:', error)
+    throw error
+  }
+} 

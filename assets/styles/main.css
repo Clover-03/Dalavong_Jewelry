@@ -8,7 +8,7 @@
   src: url('/fonts/NotoSansLao-SemiCondensed.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap; /* Improves performance by avoiding invisible text */
+  font-display: swap;
 }
 
 /* 
@@ -38,3 +38,10 @@ html, body, .v-application, .v-application .text-h6, .v-application .text-body-1
 h1, h2, h3, h4, h5, h6 {
   font-family: 'NotoSansLao-SemiCondensed', 'Noto Sans Lao', sans-serif !important;
 }
+/* Apply the custom font to all elements */
+* {
+  font-family: 'NotoSansLao-SemiCondensed', 'Noto Sans Lao', sans-serif !important;
+}
+
+/* You can keep other global styles below */
+

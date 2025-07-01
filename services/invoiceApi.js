@@ -1,63 +1,53 @@
-const BASE_URL = 'http://localhost:5000/api';
+import useApi from '~/composables/useApi'
 
-const getToken = () => localStorage.getItem('token');
+const api = useApi()
 
-const request = async (endpoint, options = {}) => {
-  const url = `${BASE_URL}/${endpoint}`;
-  const token = getToken();
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+export const fetchInvoices = async () => {
+  try {
+    const response = await api.get('/invoices')
+    return response
+  } catch (error) {
+    console.error('Error fetching invoices:', error)
+    throw error
   }
+}
 
-  const config = {
-    ...options,
-    headers,
-  };
-
-  const response = await fetch(url, config);
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: `An error occurred: ${response.statusText}` }));
-    throw new Error(errorData.message || 'An unknown server error occurred');
+export const createInvoice = async (invoiceData) => {
+  try {
+    const response = await api.post('/invoices', invoiceData)
+    return response
+  } catch (error) {
+    console.error('Error creating invoice:', error)
+    throw error
   }
+}
 
-  if (response.status === 204) { // No Content
-    return;
+export const updateInvoice = async (id, invoiceData) => {
+  try {
+    const response = await api.put(`/invoices/${id}`, invoiceData)
+    return response
+  } catch (error) {
+    console.error('Error updating invoice:', error)
+    throw error
   }
-  
-  return response.json();
-};
+}
 
-export const fetchInvoices = () => {
-  return request('/invoices');
-};
+export const deleteInvoice = async (id) => {
+  try {
+    const response = await api.del(`/invoices/${id}`)
+    return response
+  } catch (error) {
+    console.error('Error deleting invoice:', error)
+    throw error
+  }
+}
 
-export const createInvoice = (invoiceData) => {
-  return request('/invoices', {
-    method: 'POST',
-    body: JSON.stringify(invoiceData),
-  });
-};
-
-export const updateInvoice = (id, invoiceData) => {
-  return request(`/invoices/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(invoiceData),
-  });
-};
-
-export const deleteInvoice = (id) => {
-  return request(`/invoices/${id}`, {
-    method: 'DELETE',
-  });
-};
-
-export const fetchPendingOrders = () => {
-  return request('/orders/pending');
-}; 
+export const getInvoiceById = async (id) => {
+  try {
+    const response = await api.get(`/invoices/${id}`)
+    return response
+  } catch (error) {
+    console.error('Error fetching invoice by ID:', error)
+    throw error
+  }
+} 

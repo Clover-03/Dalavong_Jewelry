@@ -10,8 +10,8 @@
 
     <!-- Summary Statistics -->
     <div class="summary-section mb-6">
-      <v-row>
-        <v-col cols="12" md="3">
+            <v-row>
+        <v-col cols="12" md="4">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#365a76">mdi-diamond-stone</v-icon>
@@ -22,7 +22,7 @@
             </div>
           </div>
         </v-col>
-        <v-col cols="12" md="3">
+        <v-col cols="12" md="4">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#10b981">mdi-check-circle</v-icon>
@@ -33,18 +33,7 @@
             </div>
           </div>
         </v-col>
-        <v-col cols="12" md="3">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <v-icon size="32" color="#f59e0b">mdi-cash-multiple</v-icon>
-            </div>
-            <div class="stat-content">
-              <h3 class="stat-number">{{ formatCurrency(averagePrice) }}</h3>
-              <p class="stat-label">ລາຄາສະເລ່ຍ</p>
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="3">
+        <v-col cols="12" md="4">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#8b5cf6">mdi-file-document-plus</v-icon>

@@ -1,6 +1,6 @@
 <template>
   <ModernPageLayout 
-    title="ຈັດການຂໍ້ມູນການສັ່ງຊື້"
+    title="ຈັດການຂໍ້ມູນການນຳສົ່ງສິນຄ້າ"
     subtitle="ຈັດການແລະອັບເດດສະຖານະການສັ່ງຊື້ສິນຄ້າຈາກຜູ້ສະໜອງ"
     icon="mdi-clipboard-check"
   >

@@ -10,8 +10,8 @@ datasource db {
 model Tb_Price {
   Price_ID   Int        @id @default(autoincrement())
   Date       DateTime?  @default(now()) @db.DateTime(0)
-  Buy_price  Decimal?   @db.Decimal(10, 2)
-  Sell_price Decimal?   @db.Decimal(10, 2)
+  Buy_price  Decimal?   @db.Decimal(20, 2)
+  Sell_price Decimal?   @db.Decimal(20, 2)
   Tb_Product Tb_Product[]
 
   @@map("tb_price")
@@ -26,7 +26,7 @@ model Tb_Product {
   Pd_name       String        @db.VarChar(50)
   Type          String?       @db.VarChar(30)
   Weight        Decimal?      @db.Decimal(10, 2)
-  Pattern_value Decimal?      @db.Decimal(10, 2)
+  Pattern_value Decimal?      @db.Decimal(20, 2)
   Img           String?
   status        ProductStatus @default(AVAILABLE)
   condition     ProductCondition @default(GOOD)
@@ -93,8 +93,8 @@ model Tb_Order_Product {
   Order_ID         Int
   Pd_ID            Int
   Quantity         Int
-  Buy_price        Decimal    @db.Decimal(15, 2)
-  Discount         Decimal?   @db.Decimal(10, 2) @default(0.00)
+  Buy_price        Decimal    @db.Decimal(20, 2)
+  Discount         Decimal?   @db.Decimal(20, 2) @default(0.00)
   Tb_Order         Tb_Order   @relation(fields: [Order_ID], references: [Order_ID])
   Tb_Product       Tb_Product @relation(fields: [Pd_ID], references: [Pd_ID])
 
@@ -105,7 +105,7 @@ model Tb_Invoice {
   Inv_ID      Int         @id @default(autoincrement())
   Order_ID    Int?
   Inv_Date    DateTime?   @default(now()) @db.DateTime(0)
-  Total_Price Decimal?    @db.Decimal(15, 2)
+  Total_Price Decimal?    @db.Decimal(20, 2)
   Status      InvoiceStatus?
   Tb_Order    Tb_Order?   @relation(fields: [Order_ID], references: [Order_ID])
   Tb_Product  Tb_Product[]
@@ -121,7 +121,7 @@ model Tb_Sell {
   Sell_Date      DateTime?  @default(now()) @db.DateTime(0)
   Quantity       Int
   Price_At_Sale  Decimal    @db.Decimal(20, 2)
-  Discount       Decimal?   @db.Decimal(10, 2) @default(0.00)
+  Discount       Decimal?   @db.Decimal(20, 2) @default(0.00)
   Payment_Method String?    @db.VarChar(50)
   Total          Decimal?   @db.Decimal(20, 2)
   Tb_Product     Tb_Product @relation(fields: [Pd_ID], references: [Pd_ID])
@@ -136,11 +136,11 @@ model Tb_Repurchase {
   Cust_ID              Int?
   User_ID              String?       @db.VarChar(255)
   Re_date              DateTime?     @default(now()) @db.DateTime(0)
-  Repurchase_Price     Decimal       @db.Decimal(10, 2)
+  Repurchase_Price     Decimal       @db.Decimal(20, 2)
   Re_Reason            String?       @db.Text
-  Damage_Cost          Decimal?      @db.Decimal(10, 2) @default(0.00)
-  Loose_Gold_Cost      Decimal?      @db.Decimal(10, 2) @default(0.00)
-  Net_Repurchase_Price Decimal?      @db.Decimal(10, 2) @default(0.00)
+  Damage_Cost          Decimal?      @db.Decimal(20, 2) @default(0.00)
+  Loose_Gold_Cost      Decimal?      @db.Decimal(20, 2) @default(0.00)
+  Net_Repurchase_Price Decimal?      @db.Decimal(20, 2) @default(0.00)
   Tb_Customer          Tb_Customer?  @relation(fields: [Cust_ID], references: [Cust_ID])
   Tb_User              Tb_User?      @relation(fields: [User_ID], references: [User_ID])
   Tb_Product           Tb_Product[]
@@ -154,11 +154,11 @@ model Tb_Exchange {
   Old_Pd_ID            Int?         @unique
   New_Pd_ID            Int?
   Exch_Date            DateTime?    @default(now()) @db.DateTime(0)
-  Old_Product_Value    Decimal?     @db.Decimal(10, 2)
-  New_Product_Value    Decimal?     @db.Decimal(10, 2)
-  Exchange_Fee         Decimal?     @db.Decimal(10, 2) @default(0)
-  Lost_Weight_Fee      Decimal?     @db.Decimal(10, 2) @default(0)
-  Different_price      Decimal?     @db.Decimal(10, 2)
+  Old_Product_Value    Decimal?     @db.Decimal(20, 2)
+  New_Product_Value    Decimal?     @db.Decimal(20, 2)
+  Exchange_Fee         Decimal?     @db.Decimal(20, 2) @default(0)
+  Lost_Weight_Fee      Decimal?     @db.Decimal(20, 2) @default(0)
+  Different_price      Decimal?     @db.Decimal(20, 2)
   Notes                String?      @db.Text
   Tb_Customer          Tb_Customer? @relation(fields: [Cust_ID], references: [Cust_ID])
   Old_Product          Tb_Product?  @relation("OldProductExchange", fields: [Old_Pd_ID], references: [Pd_ID])
@@ -188,14 +188,14 @@ enum ProductStatus {
   AVAILABLE
   SOLD
   REPURCHASED
-  DAMAGED
   EXCHANGED
 }
 
 enum ProductCondition {
-  GOOD          // ສະພາບດີ - ພ້ອມຂາຍ
-  DAMAGED       // ເສຍຫາຍ - ຕ້ອງຕີໃໝ່
-  NEEDS_REPAIR  // ຕ້ອງການຊ່ອມແຊມ
+  GOOD           // Perfect condition
+  NEEDS_REPAIR   // Damaged but repairable
+  REPAIRED       // Successfully repaired (ready to set as available)
+  DAMAGED        // Irreparably damaged
 } 
  
  

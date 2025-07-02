@@ -134,7 +134,7 @@ exports.createRepurchase = async (req, res) => {
             Weight: parseFloat(newProduct.weight) || 0,
             Pattern_value: 0, // External products don't have pattern value
             status: ProductStatus.REPURCHASED,
-            condition: parsedDamageCost > 0 ? 'DAMAGED' : 'GOOD', // Set condition based on damage cost
+            condition: parsedDamageCost > 0 ? 'NEEDS_REPAIR' : 'GOOD', // Set condition based on damage cost
           },
         });
         
@@ -170,7 +170,7 @@ exports.createRepurchase = async (req, res) => {
           data: {
             Re_ID: repurchase.Re_ID,
             status: ProductStatus.REPURCHASED,
-            condition: parsedDamageCost > 0 ? 'DAMAGED' : 'GOOD', // Set condition based on damage cost
+            condition: parsedDamageCost > 0 ? 'NEEDS_REPAIR' : 'GOOD', // Set condition based on damage cost
           },
         });
       }
@@ -189,48 +189,35 @@ exports.createRepurchase = async (req, res) => {
 // Update a repurchase
 exports.updateRepurchase = async (req, res) => {
         const { id } = req.params;
-  const { productIds, repurchasePrice } = req.body;
+  const { repurchasePrice, damageCost, looseGoldCost } = req.body;
   const repurchaseId = parseInt(id);
+
+  // Ensure monetary values are parsed as numbers and default to 0 if invalid
+  const parsedRepurchasePrice = parseFloat(repurchasePrice) || 0;
+  const parsedDamageCost = parseFloat(damageCost) || 0;
+  const parsedLooseGoldCost = parseFloat(looseGoldCost) || 0;
 
   try {
     const updatedRepurchase = await prisma.$transaction(async (prisma) => {
-      // 1. Update the price on the repurchase record
+      // 1. Update the prices and calculate net price on the repurchase record
       const repurchase = await prisma.tb_Repurchase.update({
         where: { Re_ID: repurchaseId },
         data: {
-          Repurchase_Price: repurchasePrice,
+          Repurchase_Price: parsedRepurchasePrice,
+          Damage_Cost: parsedDamageCost,
+          Loose_Gold_Cost: parsedLooseGoldCost,
+          Net_Repurchase_Price: parsedRepurchasePrice - parsedDamageCost - parsedLooseGoldCost,
         },
       });
 
-      // 2. Get the list of products currently associated with this repurchase
-      const currentProducts = await prisma.tb_Product.findMany({
+      // 2. Update the condition of associated products based on new damage cost
+      await prisma.tb_Product.updateMany({
         where: { Re_ID: repurchaseId },
-        select: { Pd_ID: true },
+        data: {
+          condition: parsedDamageCost > 0 ? 'NEEDS_REPAIR' : 'GOOD',
+        },
       });
-      const currentProductIds = currentProducts.map(p => p.Pd_ID);
-
-      // Ensure productIds is always an array and filter invalid values
-      let safeProductIds = Array.isArray(productIds) ? productIds : [];
-      safeProductIds = safeProductIds.filter(pid => pid != null && pid !== '');
-
-      // 3. Detach products that are no longer in the list
-      const productsToDetach = currentProductIds.filter(pid => !safeProductIds.includes(pid));
-      if (productsToDetach.length > 0) {
-        await prisma.tb_Product.updateMany({
-          where: { Pd_ID: { in: productsToDetach } },
-          data: { Re_ID: null },
-        });
-      }
-
-      // 4. Attach new products to this repurchase
-      const productsToAttach = safeProductIds.filter(pid => !currentProductIds.includes(pid));
-      if (productsToAttach.length > 0) {
-        await prisma.tb_Product.updateMany({
-          where: { Pd_ID: { in: productsToAttach } },
-          data: { Re_ID: repurchaseId },
-        });
-      }
-
+      
       return repurchase;
     });
 

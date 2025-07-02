@@ -212,6 +212,26 @@ const deleteProduct = async (req, res) => {
       );
     }
 
+    // Check if product is referenced by other records
+    const [sellRecord, repurchaseRecord, exchangeRecord] = await Promise.all([
+      prisma.tb_Sell.findFirst({ where: { Pd_ID: parseInt(id) } }),
+      prisma.tb_Product.findFirst({ where: { Pd_ID: parseInt(id), Re_ID: { not: null } } }),
+      prisma.tb_Exchange.findFirst({
+        where: {
+          OR: [
+            { Old_Pd_ID: parseInt(id) },
+            { New_Pd_ID: parseInt(id) }
+          ]
+        }
+      })
+    ]);
+
+    if (sellRecord || repurchaseRecord || exchangeRecord) {
+      return res.status(400).json(
+        createError(ERROR_CODES.PROD_DELETE_FAILED, 'ບໍ່ສາມາດລຶບສິນຄ້ານີ້ໄດ້ເນື່ອງຈາກຖືກໃຊ້ໃນລາຍການຂາຍ/ຮັບຊື້ຄືນ/ແລກປ່ຽນ', 400)
+      );
+    }
+
     await prisma.tb_Product.delete({
       where: { Pd_ID: parseInt(id) }
     });
@@ -219,6 +239,14 @@ const deleteProduct = async (req, res) => {
     res.json(createSuccess(null, 'ລຶບສິນຄ້າສຳເລັດ'));
   } catch (error) {
     console.error('Error deleting product:', error);
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2003') {
+      return res.status(400).json(
+        createError(ERROR_CODES.PROD_DELETE_FAILED, 'ບໍ່ສາມາດລຶບສິນຄ້ານີ້ໄດ້ເນື່ອງຈາກຖືກໃຊ້ໃນລາຍການອື່ນ', 400)
+      );
+    }
+    
     res.status(500).json(
       createError(ERROR_CODES.PROD_DELETE_FAILED, 'ບໍ່ສາມາດລຶບສິນຄ້າໄດ້', 500, error.message)
     );

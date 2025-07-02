@@ -25,12 +25,14 @@ const mapExchangeToFrontend = (exchange) => {
       Pd_name: exchange.Old_Product.Pd_name,
       Type: exchange.Old_Product.Type,
       Weight: exchange.Old_Product.Weight,
+      condition: exchange.Old_Product.condition,
     } : null,
     New_Product: exchange.New_Product ? {
       Pd_ID: exchange.New_Product.Pd_ID,
       Pd_name: exchange.New_Product.Pd_name,
       Type: exchange.New_Product.Type,
       Weight: exchange.New_Product.Weight,
+      status: exchange.New_Product.status,
     } : null,
     // For old product description (used by frontend)
     Old_Pd_Description: exchange.Old_Product?.Pd_name || null,
@@ -172,6 +174,7 @@ exports.updateExchange = async (req, res) => {
       Old_Pd_Description,
       Old_Pd_Type,
       Old_Pd_Actual_Weight,
+      Old_Product_Condition,
     } = req.body;
 
     const result = await prisma.$transaction(async (tx) => {
@@ -186,13 +189,14 @@ exports.updateExchange = async (req, res) => {
       }
 
       // Update old product details if provided
-      if (existingExchange.Old_Pd_ID && Old_Pd_Description) {
+      if (existingExchange.Old_Pd_ID) {
         await tx.tb_Product.update({
           where: { Pd_ID: existingExchange.Old_Pd_ID },
           data: {
             Pd_name: Old_Pd_Description,
             Type: Old_Pd_Type,
-            Weight: Old_Pd_Actual_Weight?.toString() || '0',
+            Weight: parseFloat(Old_Pd_Actual_Weight) || 0,
+            condition: Old_Product_Condition || 'GOOD',
           },
         });
       }

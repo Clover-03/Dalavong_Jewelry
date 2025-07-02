@@ -243,7 +243,7 @@
     <v-dialog v-model="statusDialog" max-width="500px" persistent>
       <v-card class="modern-dialog">
         <v-card-title class="dialog-title">
-          ອັບເດດສະຖານະການສັ່ງຊື້
+          ອັບເດດສະຖານະການນຳສົ່ງສິນຄ້າ
         </v-card-title>
         <v-card-text class="pa-6">
           <div class="mb-4">
@@ -286,7 +286,7 @@
     <v-dialog v-model="detailsDialog" max-width="800px" persistent>
       <v-card class="modern-dialog">
         <v-card-title class="dialog-title">
-          ລາຍລະອຽດການສັ່ງຊື້
+          ລາຍລະອຽດການນຳສົ່ງສິນຄ້າ
         </v-card-title>
         <v-card-text class="pa-6">
           <v-row v-if="selectedOrder">

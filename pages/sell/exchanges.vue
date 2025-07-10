@@ -373,7 +373,7 @@
                      <v-col cols="12" md="6">
                  <v-autocomplete
                   v-model="form.New_Pd_ID"
-                        :items="availableProducts || []"
+                        :items="newProductItems || []"
                         item-title="name"
                         item-value="id"
                   label="ເລືອກສິນຄ້າໃໝ່"
@@ -905,10 +905,19 @@ const paginatedExchanges = computed(() => {
   return filteredExchanges.value.slice(start, end);
 });
 
-const availableProducts = computed(() => {
+const newProductItems = computed(() => {
   if (!products.value || !Array.isArray(products.value)) return [];
-  // Filter to show only available products
-  return products.value.filter(product => product.status === 'AVAILABLE');
+  
+  const available = products.value.filter(p => p.status === 'AVAILABLE');
+  
+  if (isEditMode.value && form.value.New_Pd_ID) {
+    const selectedProduct = products.value.find(p => p.id === form.value.New_Pd_ID);
+    if (selectedProduct && !available.some(p => p.id === selectedProduct.id)) {
+      return [...available, selectedProduct];
+    }
+  }
+  
+  return available;
 });
 
 const calculatedDifference = computed(() => {
@@ -1017,6 +1026,7 @@ const openEditDialog = (item) => {
     Old_Pd_Description: item.Old_Product?.Pd_name ?? '',
     Old_Pd_Type: item.Old_Product?.Type ?? '',
     Old_Pd_Actual_Weight: Number(item.Old_Product?.Weight) || 0,
+    Old_Product_Condition: item.Old_Product?.condition || 'GOOD',
 
     Old_Product_Value: item.Old_Product_Value ?? 0,
     New_Product_Value: item.New_Product_Value ?? 0,
@@ -1124,6 +1134,7 @@ const saveExchange = async () => {
     Old_Product_Value: Number(form.value.Old_Product_Value) || 0,
     New_Product_Value: Number(form.value.New_Product_Value) || 0,
     // Pass the old product details for creation on the backend
+    Old_Pd_ID: form.value.Old_Pd_ID, // Ensure Old_Pd_ID is passed during edit
     Old_Pd_Description: form.value.Old_Pd_Description,
     Old_Pd_Type: form.value.Old_Pd_Type,
     Old_Pd_Actual_Weight: Number(form.value.Old_Pd_Actual_Weight) || 0,
@@ -1182,9 +1193,10 @@ const rules = {
 };
 
 const conditionOptions = [
-  { text: 'ສະພາບດີ', value: 'GOOD' },
-  { text: 'ເສຍຫາຍ', value: 'DAMAGED' },
-  { text: 'ຕ້ອງຊ່ອມ', value: 'NEEDS_REPAIR' },
+  { text: 'GOOD', value: 'GOOD' },
+  { text: 'NEEDS_REPAIR', value: 'NEEDS_REPAIR' },
+  { text: 'REPAIRED', value: 'REPAIRED' },
+  { text: 'DAMAGED', value: 'DAMAGED' },
 ];
 
 const getCustomerDisplayName = (custId) => {
@@ -1216,19 +1228,16 @@ const _getCustomerInfo = (custId) => {
 const getConditionColor = (condition) => {
   const colors = {
     GOOD: 'success',
-    DAMAGED: 'error',
     NEEDS_REPAIR: 'warning',
+    REPAIRED: 'info',
+    DAMAGED: 'error',
   };
   return colors[condition] || 'grey';
 };
 
 const getConditionText = (condition) => {
-  const texts = {
-    GOOD: 'ສະພາບດີ',
-    DAMAGED: 'ເສຍຫາຍ',
-    NEEDS_REPAIR: 'ຕ້ອງຊ່ອມ',
-  };
-  return texts[condition] || condition;
+  // แสดงเป็นภาษาอังกฤษตามที่ผู้ใช้ต้องการ
+  return condition || 'GOOD';
 };
 
 const getStatusColor = (status) => {
@@ -1236,7 +1245,6 @@ const getStatusColor = (status) => {
     AVAILABLE: 'green',
     SOLD: 'blue-grey',
     REPURCHASED: 'orange',
-    DAMAGED: 'red',
     EXCHANGED: 'purple'
   };
   return colors[status] || 'grey';

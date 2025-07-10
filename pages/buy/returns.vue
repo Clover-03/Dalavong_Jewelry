@@ -956,7 +956,7 @@ const deleteItem = (item) => {
 
 const confirmDelete = async () => {
   try {
-    await api.delete(`/repurchases/${selectedItem.value.Re_ID}`);
+    await api.del(`/repurchases/${selectedItem.value.Re_ID}`);
     showSnackbar('ລຶບຂໍ້ມູນສຳເລັດ', 'success');
     await fetchRepurchases();
   } catch (_error) {

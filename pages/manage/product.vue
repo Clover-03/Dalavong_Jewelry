@@ -10,7 +10,7 @@
 
     <!-- Summary Statistics -->
     <div class="summary-section mb-6">
-            <v-row>
+      <v-row>
         <v-col cols="12" md="4">
           <div class="stat-card">
             <div class="stat-icon">
@@ -165,7 +165,7 @@
                       class="action-btn"
                     >
                       <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
+              </v-btn>
                   </template>
                 </v-tooltip>
                 
@@ -181,11 +181,11 @@
                       class="action-btn"
                     >
                       <v-icon>mdi-delete</v-icon>
-                    </v-btn>
+              </v-btn>
                   </template>
                 </v-tooltip>
                 
-                <v-tooltip v-if="item.status === 'REPURCHASED' || item.status === 'DAMAGED' || item.condition === 'DAMAGED'" text="ຕັ້ງເປັນພ້ອມຂາຍ" location="top">
+                <v-tooltip v-if="(item.status === 'REPURCHASED' && item.condition === 'GOOD') || item.condition === 'REPAIRED'" text="ຕັ້ງເປັນພ້ອມຂາຍ" location="top">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       v-bind="props"
@@ -197,7 +197,7 @@
                       class="action-btn"
                     >
                       <v-icon>mdi-check-circle</v-icon>
-                    </v-btn>
+              </v-btn>
                   </template>
                 </v-tooltip>
               </div>
@@ -314,7 +314,6 @@
               variant="outlined"
               density="comfortable"
               readonly 
-              disabled
               color="#365a76"
             />
           </v-card-text>
@@ -418,7 +417,6 @@
               variant="outlined"
               density="comfortable"
               readonly 
-              disabled
               color="#365a76"
             />
           </v-card-text>
@@ -531,7 +529,6 @@ const sortDesc = ref(false);
 // Pagination
 const page = ref(1);
 const itemsPerPage = ref(10);
-const pageMenu = ref(false);
 
 // Fetch initial data
 onMounted(async () => {
@@ -763,7 +760,7 @@ const statusOptions = [
   { text: 'AVAILABLE', value: 'AVAILABLE' },
   { text: 'SOLD', value: 'SOLD' },
   { text: 'REPURCHASED', value: 'REPURCHASED' },
-  { text: 'DAMAGED', value: 'DAMAGED' },
+  { text: 'EXCHANGED', value: 'EXCHANGED' },
 ];
 
 const getWeightText = (value) => {
@@ -775,7 +772,7 @@ const getStatusColor = (status) => {
     AVAILABLE: 'green',
     SOLD: 'blue-grey',
     REPURCHASED: 'orange',
-    DAMAGED: 'red',
+    EXCHANGED: 'purple',
   };
   return colors[status] || 'grey';
 };
@@ -783,25 +780,23 @@ const getStatusColor = (status) => {
 const getConditionColor = (condition) => {
   const colors = {
     GOOD: 'success',
-    DAMAGED: 'error',
     NEEDS_REPAIR: 'warning',
+    REPAIRED: 'info',
+    DAMAGED: 'error',
   };
   return colors[condition] || 'grey';
 };
 
 const getConditionText = (condition) => {
-  const texts = {
-    GOOD: 'ສະພາບດີ',
-    DAMAGED: 'ເສຍຫາຍ',
-    NEEDS_REPAIR: 'ຕ້ອງຊ່ອມ',
-  };
-  return texts[condition] || condition;
+  // แสดงเป็นภาษาอังกฤษตามที่ผู้ใช้ต้องการ
+  return condition || 'GOOD';
 };
 
 const conditionOptions = [
-  { text: 'ສະພາບດີ', value: 'GOOD' },
-  { text: 'ເສຍຫາຍ', value: 'DAMAGED' },
-  { text: 'ຕ້ອງຊ່ອມ', value: 'NEEDS_REPAIR' },
+  { text: 'GOOD', value: 'GOOD' },
+  { text: 'NEEDS_REPAIR', value: 'NEEDS_REPAIR' },
+  { text: 'REPAIRED', value: 'REPAIRED' },
+  { text: 'DAMAGED', value: 'DAMAGED' },
 ];
 
 // Currency Input Handling
@@ -814,37 +809,68 @@ const parseInput = (value) => {
   return Number(String(value).replace(/,/g, ''));
 };
 
-// Pagination Controls
-const goToPreviousPage = () => { if (page.value > 1) page.value--; };
-const goToNextPage = () => {
-  if (page.value < Math.ceil(filteredProducts.value.length / itemsPerPage.value)) {
-    page.value++;
-  }
-};
-
 // Calculated Sell Price
 const calculatedSellPrice = computed(() => {
-  if (!latestGoldPrice.value || !addItem.value.weight) return addItem.value.estimatePrice;
+  console.log('Gold Price Debug:', latestGoldPrice.value);
+  console.log('Add Item Weight:', addItem.value.weight);
+  console.log('Add Item EstimatePrice:', addItem.value.estimatePrice);
+  
+  if (!latestGoldPrice.value || !addItem.value.weight) {
+    return parseFloat(addItem.value.estimatePrice || 0);
+  }
 
   const weightInGrams = parseFloat(addItem.value.weight);
-  if (isNaN(weightInGrams)) return addItem.value.estimatePrice;
+  const estimatePrice = parseFloat(addItem.value.estimatePrice || 0);
 
-  const goldPricePerGram = latestGoldPrice.value.Sell_price / 15.16;
+  if (isNaN(weightInGrams)) {
+    return estimatePrice;
+  }
+
+  const sellPricePerBaht = parseFloat(latestGoldPrice.value.sellPrice);
+  console.log('Sell Price Per Baht:', sellPricePerBaht);
+  
+  if (isNaN(sellPricePerBaht)) {
+    return estimatePrice;
+  }
+
+  const goldPricePerGram = sellPricePerBaht / 15.16;
   const goldValue = goldPricePerGram * weightInGrams;
 
-  return (addItem.value.estimatePrice || 0) + goldValue;
+  console.log('Gold Price Per Gram:', goldPricePerGram);
+  console.log('Gold Value:', goldValue);
+  console.log('Estimate Price:', estimatePrice);
+
+  const totalPrice = (estimatePrice || 0) + goldValue;
+  const finalPrice = Math.round(totalPrice / 1000) * 1000;
+  
+  console.log('Total Price:', totalPrice);
+  console.log('Final Price (rounded):', finalPrice);
+  
+  return finalPrice;
 });
 
 const calculatedEditSellPrice = computed(() => {
-  if (!latestGoldPrice.value || !editItem.value.weight) return editItem.value.estimatePrice;
+  if (!latestGoldPrice.value || !editItem.value.weight) {
+    return parseFloat(editItem.value.estimatePrice || 0);
+  }
 
   const weightInGrams = parseFloat(editItem.value.weight);
-  if (isNaN(weightInGrams)) return editItem.value.estimatePrice;
+  const estimatePrice = parseFloat(editItem.value.estimatePrice || 0);
 
-  const goldPricePerGram = latestGoldPrice.value.Sell_price / 15.16;
+  if (isNaN(weightInGrams)) {
+    return estimatePrice;
+  }
+
+  const sellPricePerBaht = parseFloat(latestGoldPrice.value.sellPrice);
+  if (isNaN(sellPricePerBaht)) {
+    return estimatePrice;
+  }
+
+  const goldPricePerGram = sellPricePerBaht / 15.16;
   const goldValue = goldPricePerGram * weightInGrams;
 
-  return (editItem.value.estimatePrice || 0) + goldValue;
+  const totalPrice = (estimatePrice || 0) + goldValue;
+  return Math.round(totalPrice / 1000) * 1000;
 });
 
 const weightOptions = [
@@ -865,12 +891,6 @@ const totalProducts = computed(() => products.value.length || 0);
 const availableCount = computed(() => 
   products.value.filter(p => p.status === 'AVAILABLE').length || 0
 );
-
-const averagePrice = computed(() => {
-  if (products.value.length === 0) return 0;
-  const total = products.value.reduce((sum, p) => sum + (p.estimatePrice || 0), 0);
-  return Math.round(total / products.value.length);
-});
 
 </script>
 
@@ -1338,5 +1358,48 @@ const averagePrice = computed(() => {
 /* Dark Mode Progress Circular */
 .v-theme--dark :deep(.v-progress-circular) {
   color: #365a76 !important;
+}
+
+/* Calculated Price Field Styling */
+:deep(.v-text-field--disabled .v-field__field) {
+  background: #f5f7fa !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+}
+
+:deep(.v-text-field--disabled .v-field__input) {
+  background: #f5f7fa !important;
+  color: #2d3748 !important;
+  font-weight: 600 !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+:deep(.v-text-field--disabled .v-field__outline) {
+  border-color: #cbd5e0 !important;
+  border-width: 1px !important;
+}
+
+:deep(.v-text-field--disabled .v-label) {
+  color: #4a5568 !important;
+  font-weight: 600 !important;
+}
+
+/* Dark Mode Calculated Price Field */
+.v-theme--dark :deep(.v-text-field--disabled .v-field__field) {
+  background: #2d3748 !important;
+  border: 1px solid #4a5568 !important;
+}
+
+.v-theme--dark :deep(.v-text-field--disabled .v-field__input) {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+}
+
+.v-theme--dark :deep(.v-text-field--disabled .v-field__outline) {
+  border-color: #4a5568 !important;
+}
+
+.v-theme--dark :deep(.v-text-field--disabled .v-label) {
+  color: #a0aec0 !important;
 }
 </style>

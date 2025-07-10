@@ -313,12 +313,8 @@ const getCustomerAddress = () => {
 };
 
 const getConditionText = (condition) => {
-  const texts = {
-    GOOD: 'ສະພາບດີ',
-    DAMAGED: 'ເສຍຫາຍ',
-    NEEDS_REPAIR: 'ຕ້ອງຊ່ອມ',
-  };
-  return texts[condition] || condition || 'ສະພາບດີ';
+  // แสดงเป็นภาษาอังกฤษตามที่ผู้ใช้ต้องการ
+  return condition || 'GOOD';
 };
 
 const handlePrint = () => {

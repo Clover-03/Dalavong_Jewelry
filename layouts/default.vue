@@ -50,13 +50,6 @@
                 </div>
               </div>
               <v-divider class="my-2"></v-divider>
-              <v-list-item class="profile-item">
-                <template #prepend>
-                  <v-icon color="#365a76">mdi-account-settings</v-icon>
-                </template>
-                <v-list-item-title>ຕັ້ງຄ່າໂປຣໄຟລ໌</v-list-item-title>
-              </v-list-item>
-              <v-divider class="my-2"></v-divider>
               <v-list-item @click="logout" class="logout-item">
                 <template #prepend>
                   <v-icon color="error">mdi-logout</v-icon>

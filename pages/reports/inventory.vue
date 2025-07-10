@@ -222,8 +222,7 @@ const statusOptions = [
   { title: 'Available', value: 'AVAILABLE' },
   { title: 'Sold', value: 'SOLD' },
   { title: 'Repurchased', value: 'REPURCHASED' },
-  { title: 'Exchanged', value: 'EXCHANGED' },
-  { title: 'Damaged', value: 'DAMAGED' }
+                    { title: 'Exchanged', value: 'EXCHANGED' }
 ];
 
 const categoryOptions = ref([]);
@@ -364,7 +363,6 @@ const getStatusColor = (status) => {
     case 'SOLD': return 'error';
     case 'REPURCHASED': return 'warning';
     case 'EXCHANGED': return 'info';
-    case 'DAMAGED': return 'error';
     default: return 'grey';
   }
 };
@@ -375,7 +373,6 @@ const getStatusText = (status) => {
     case 'SOLD': return 'Sold';
     case 'REPURCHASED': return 'Repurchased';
     case 'EXCHANGED': return 'Exchanged';
-    case 'DAMAGED': return 'Damaged';
     default: return status || 'Unknown';
   }
 };

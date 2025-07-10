@@ -25,7 +25,7 @@
             </div>
             <div class="card-content">
               <p class="price-label">ລາຄາຂາຍ</p>
-              <h2 class="price-value">{{ formatCurrency(goldPrice?.Sell_price || 0) }}</h2>
+              <h2 class="price-value">{{ formatCurrency(goldPrice?.sellPrice || 0) }}</h2>
               <p class="price-unit">LAK ຕໍ່ 1 ບາດ</p>
             </div>
           </div>

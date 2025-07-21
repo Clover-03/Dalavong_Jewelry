@@ -332,7 +332,6 @@
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" :key="`customer-${item.raw.id}`">
-                      <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
                       <v-list-item-subtitle>{{ item.raw.phone }}</v-list-item-subtitle>
                     </v-list-item>
                   </template>
@@ -359,9 +358,8 @@
                 >
                   <template #item="{ props, item }">
                     <v-list-item v-bind="props" :key="`product-${item.raw.id}`">
-                      <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
                       <v-list-item-subtitle>
-                        {{ item.raw.category }} - {{ formatWeight(item.raw.weight) }} - {{ item.raw.code }}
+                        {{ item.raw.Type || item.raw.category }} - {{ formatWeight(item.raw.Weight || item.raw.weight) }}
                       </v-list-item-subtitle>
                     </v-list-item>
                   </template>
@@ -856,7 +854,7 @@ const availableProducts = computed(() => {
     .filter(p => p.status === 'AVAILABLE')
     .map(p => ({
       ...p,
-      displayName: `${p.name || p.Pd_name} (${p.code || p.Pd_ID})`
+      displayName: p.name || p.Pd_name
     }));
 });
 

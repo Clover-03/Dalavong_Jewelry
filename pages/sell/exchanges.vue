@@ -256,14 +256,20 @@
                     <v-col cols="12" md="6">
                       <v-autocomplete
                         v-model="form.Cust_ID"
-                        :items="customers"
-                        item-title="Cust_name"
-                        item-value="Cust_ID"
+                        :items="mappedCustomers"
+                        item-title="name"
+                        item-value="id"
                         label="ເລືອກລູກຄ້າ"
                         outlined dense
                         :rules="[rules.required]"
                         prepend-inner-icon="mdi-account"
-                      />
+                      >
+                        <template #item="{ props, item }">
+                          <v-list-item v-bind="props" :key="`customer-${item.raw.id}`">
+                            <v-list-item-subtitle>{{ item.raw.phone }}</v-list-item-subtitle>
+                          </v-list-item>
+                        </template>
+                      </v-autocomplete>
                     </v-col>
                     <v-col cols="12" md="3">
                       <v-text-field
@@ -381,7 +387,15 @@
                   density="comfortable"
                   :rules="[rules.required]"
                         prepend-inner-icon="mdi-diamond-stone"
-                />
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props" :key="`product-${item.raw.id}`">
+                      <v-list-item-subtitle>
+                        {{ item.raw.Type || item.raw.category }} - {{ formatWeight(item.raw.weight || item.raw.Weight) }}
+                      </v-list-item-subtitle>
+                    </v-list-item>
+                  </template>
+                </v-autocomplete>
               </v-col>
                     <v-col cols="12" md="3">
                       <v-text-field
@@ -905,19 +919,39 @@ const paginatedExchanges = computed(() => {
   return filteredExchanges.value.slice(start, end);
 });
 
+const mappedCustomers = computed(() => {
+  if (!customers.value || !Array.isArray(customers.value)) return [];
+  
+  return customers.value.map(c => ({
+    ...c,
+    id: c.Cust_ID || c.id,
+    name: c.Cust_name || c.name,
+    phone: c.Phone || c.phone || 'ບໍ່ມີຂໍ້ມູນ'
+  }));
+});
+
 const newProductItems = computed(() => {
   if (!products.value || !Array.isArray(products.value)) return [];
   
   const available = products.value.filter(p => p.status === 'AVAILABLE');
   
+  const mappedProducts = available.map(p => ({
+    ...p,
+    name: p.name || p.Pd_name
+  }));
+  
   if (isEditMode.value && form.value.New_Pd_ID) {
     const selectedProduct = products.value.find(p => p.id === form.value.New_Pd_ID);
     if (selectedProduct && !available.some(p => p.id === selectedProduct.id)) {
-      return [...available, selectedProduct];
+      const mappedSelected = {
+        ...selectedProduct,
+        name: selectedProduct.name || selectedProduct.Pd_name
+      };
+      return [...mappedProducts, mappedSelected];
     }
   }
   
-  return available;
+  return mappedProducts;
 });
 
 const calculatedDifference = computed(() => {

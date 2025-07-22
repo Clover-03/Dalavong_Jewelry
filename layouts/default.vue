@@ -956,6 +956,26 @@ onMounted(() => {
   font-weight: 600;
 }
 
+/* Light Mode Active Item Styles */
+.v-theme--light .active-nav-item,
+.v-theme--light .active-nav-item.nav-sub-item {
+  background: #e2e8f0 !important;
+}
+
+.v-theme--light .active-nav-item .modern-nav-text,
+.v-theme--light .active-nav-item .nav-item-text,
+.v-theme--light .active-nav-item.nav-sub-item .v-list-item-title {
+  color: #2c4960 !important;
+  font-weight: 600;
+}
+
+.v-theme--light .active-nav-item .modern-nav-icon,
+.v-theme--light .active-nav-item .nav-item-icon,
+.v-theme--light .active-nav-item.nav-sub-item .nav-sub-icon {
+  background: #cbd5e1 !important;
+  color: #2c4960 !important;
+}
+
 /* Navigation Arrow */
 .nav-arrow {
   transition: transform 0.3s ease;

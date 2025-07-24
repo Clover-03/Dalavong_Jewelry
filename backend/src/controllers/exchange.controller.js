@@ -104,9 +104,28 @@ exports.createExchange = async (req, res) => {
       Old_Pd_Type,
       Old_Pd_Actual_Weight,
       Old_Product_Condition, // Add condition for old product
+      // New customer data (if creating new customer)
+      newCustomer,
     } = req.body;
 
     const result = await prisma.$transaction(async (tx) => {
+      // Handle new customer creation if needed
+      let custId = Cust_ID;
+      if (newCustomer && newCustomer.name) {
+        console.log('Creating new customer:', newCustomer);
+        
+        const createdCustomer = await tx.tb_Customer.create({
+          data: {
+            // ไม่ส่ง Cust_ID ให้ Database สร้าง Auto-increment เอง
+            Cust_name: newCustomer.name,
+            Phone: newCustomer.phone || '',
+            Address: newCustomer.address || '',
+          },
+        });
+        
+        custId = createdCustomer.Cust_ID;
+        console.log('Created customer with ID:', custId);
+      }
       // 1. Create old product record for the exchange
       const oldProduct = await tx.tb_Product.create({
         data: {
@@ -128,7 +147,7 @@ exports.createExchange = async (req, res) => {
       // 3. Create exchange record
       const exchange = await tx.tb_Exchange.create({
         data: {
-          Cust_ID: parseInt(Cust_ID),
+          Cust_ID: parseInt(custId),
           Old_Pd_ID: oldProduct.Pd_ID,
           New_Pd_ID: parseInt(New_Pd_ID),
           Exch_Date: new Date(Exch_Date),
@@ -293,15 +312,4 @@ exports.deleteExchange = async (req, res) => {
     console.error(`Error deleting exchange ${id}:`, error);
     res.status(500).json({ message: 'Error deleting exchange' });
   }
-}; 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+};

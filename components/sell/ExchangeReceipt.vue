@@ -86,10 +86,10 @@
             </thead>
             <tbody>
               <tr>
-                <td class="text-left">{{ exchange.Old_Pd_Description || 'N/A' }}</td>
-                <td class="text-center">{{ exchange.Old_Pd_Type || 'N/A' }}</td>
-                <td class="text-center">{{ formatWeight(exchange.Old_Pd_Actual_Weight) }}</td>
-                <td class="text-center">{{ getConditionText(exchange.Old_Product_Condition) }}</td>
+                <td class="text-left">{{ getOldProductName() }}</td>
+                <td class="text-center">{{ getOldProductType() }}</td>
+                <td class="text-center">{{ getOldProductWeight() }}</td>
+                <td class="text-center">{{ getConditionText(exchange.Old_Product?.condition || exchange.Old_Product_Condition) }}</td>
                 <td class="text-right total-amount">{{ formatCurrency(exchange.Old_Product_Value) }}</td>
               </tr>
             </tbody>
@@ -315,6 +315,46 @@ const getCustomerAddress = () => {
 const getConditionText = (condition) => {
   // แสดงเป็นภาษาอังกฤษตามที่ผู้ใช้ต้องการ
   return condition || 'GOOD';
+};
+
+const getOldProductName = () => {
+  return props.exchange.Old_Product?.Pd_name || props.exchange.Old_Pd_Description || 'N/A';
+};
+
+const getOldProductType = () => {
+  // Try multiple sources for type data
+  const type = props.exchange.Old_Product?.Type || props.exchange.Old_Pd_Type;
+  
+  // If type is empty string or null, return default
+  if (!type || type.trim() === '') {
+    return 'ສິນຄ້າແລກປ່ຽນ';
+  }
+  
+  return type;
+};
+
+const getOldProductWeight = () => {
+  // Try multiple sources for weight data
+  const weight = props.exchange.Old_Product?.Weight || props.exchange.Old_Pd_Actual_Weight;
+  
+  // Handle different weight formats
+  let parsedWeight = 0;
+  if (typeof weight === 'string') {
+    parsedWeight = parseFloat(weight) || 0;
+  } else if (typeof weight === 'number') {
+    parsedWeight = weight;
+  }
+  
+  // Debug logging (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Weight debug:', {
+      oldProductWeight: props.exchange.Old_Product?.Weight,
+      actualWeight: props.exchange.Old_Pd_Actual_Weight,
+      finalWeight: parsedWeight
+    });
+  }
+  
+  return formatWeight(parsedWeight);
 };
 
 const handlePrint = () => {

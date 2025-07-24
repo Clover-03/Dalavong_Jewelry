@@ -313,7 +313,7 @@
                 />
                           </v-col>
               
-              <!-- เลือกลูกค้า -->
+              <!-- ເລືອກລູກຄ້າ -->
                           <v-col cols="12" md="6">
                 <v-autocomplete
                   v-model="form.customerId"
@@ -338,7 +338,7 @@
                 </v-autocomplete>
               </v-col>
               
-              <!-- เลือกสินค้า -->
+              <!-- ເລືອກສິນຄ້າ -->
               <v-col cols="12" md="6">
                 <v-autocomplete
                   v-model="form.productId"

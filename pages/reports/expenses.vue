@@ -159,18 +159,35 @@
     </div>
 
     <!-- Pagination -->
-    <div v-if="!isLoading && filteredExpenses.length > 0" class="pagination-section mt-6">
-      <v-pagination
-        v-model="page"
-        :length="totalPages"
-        :total-visible="7"
-        color="#365a76"
-        variant="elevated"
-        size="large"
-        class="mb-4"
-      />
-      <div class="pagination-info">
-        <p>ສະແດງ {{ (page - 1) * itemsPerPage + 1 }} - {{ Math.min(page * itemsPerPage, filteredExpenses.length) }} ຈາກ {{ filteredExpenses.length }} ລາຍການ</p>
+    <div v-if="!isLoading && filteredExpenses.length > 0" class="pagination-container mt-6">
+      <div class="pagination-card">
+        <div class="pagination-content">
+          <div class="pagination-info">
+            <span class="info-text">
+              ສະແດງ {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, filteredExpenses.length) }} ຈາກ {{ filteredExpenses.length }} ລາຍການ
+            </span>
+          </div>
+          <div class="pagination-controls">
+            <v-pagination
+              v-model="page"
+              :length="totalPages"
+              :total-visible="5"
+              density="comfortable"
+            />
+          </div>
+          <div class="pagination-settings">
+            <v-select
+              v-model="itemsPerPage"
+              :items="[5, 10, 15, 20]"
+              label="ລາຍການຕໍ່ໜ້າ"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="width: 140px;"
+              @update:model-value="page = 1"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </ModernPageLayout>
@@ -224,14 +241,14 @@ const filteredExpenses = computed(() => {
   return filtered;
 });
 
+const totalPages = computed(() => {
+  return Math.ceil(filteredExpenses.value.length / itemsPerPage.value);
+});
+
 const paginatedExpenses = computed(() => {
   const start = (page.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
   return filteredExpenses.value.slice(start, end);
-});
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredExpenses.value.length / itemsPerPage.value);
 });
 
 const totalExpenses = computed(() => 
@@ -543,16 +560,54 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-.pagination-section {
+.pagination-container {
+  margin-top: 24px;
+}
+
+.pagination-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(54, 90, 118, 0.08);
+  border: 2px solid rgba(54, 90, 118, 0.1);
+  padding: 16px 24px;
+}
+
+.pagination-content {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
 }
 
 .pagination-info {
-  text-align: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.info-text {
+  font-size: 14px;
   color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.pagination-controls {
+  flex: 0 0 auto;
+}
+
+.pagination-settings {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .pagination-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .pagination-info {
+    text-align: center;
+    min-width: auto;
+  }
 }
 
 /* CSS Variables for theming */
@@ -575,5 +630,16 @@ onMounted(() => {
     --text-primary: #e2e8f0;
     --text-secondary: #a0aec0;
   }
+}
+
+/* Dark Mode Support for Pagination */
+.v-theme--dark .pagination-card {
+  background: #1e1e1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.v-theme--dark .info-text {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 </style> 

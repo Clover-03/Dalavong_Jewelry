@@ -53,7 +53,7 @@ exports.getRepurchaseById = async (req, res) => {
 
 // Create a new repurchase
 exports.createRepurchase = async (req, res) => {
-  const { custId, productIds, repurchasePrice, reReason, type, newCustomer, newProduct, damageCost, lostWeightFee } = req.body;
+  const { custId, productIds, repurchasePrice, reReason, type, newCustomer, newProduct, newProducts, damageCost, lostWeightFee } = req.body;
   const userId = req.user?.userId;
 
   console.log('Received repurchase data:', req.body);
@@ -99,47 +99,82 @@ exports.createRepurchase = async (req, res) => {
               });
             }
           } else {
-            // Generate a numeric customer ID
-            const timestamp = Date.now();
-            const customerId = parseInt(timestamp.toString().slice(-8));
-            
-            console.log('Creating new customer with ID:', customerId);
+            console.log('Creating new customer with auto-increment ID');
             
             const createdCustomer = await prisma.tb_Customer.create({
               data: {
-                Cust_ID: customerId,
+                // ไม่ส่ง Cust_ID ให้ Database สร้าง Auto-increment เอง
                 Cust_name: newCustomer.name,
                 Phone: newCustomer.phone,
                 Address: newCustomer.address || '',
               },
             });
             customerIdToUse = createdCustomer.Cust_ID;
-            console.log('Created customer:', createdCustomer);
+            console.log('Created customer with auto-increment ID:', customerIdToUse);
           }
         } else {
           throw new Error('Customer information is required for new gold repurchase.');
         }
 
-        // Create new product for new gold repurchase
-        if (!newProduct || !newProduct.name || !newProduct.type || !newProduct.weight) {
-          throw new Error('New product Name, Type, and Weight are required for new gold repurchase.');
+        // Handle multiple products for new gold repurchase
+        let productsToCreate = [];
+        
+        // Support both old single product format and new multiple products format
+        if (newProducts && Array.isArray(newProducts) && newProducts.length > 0) {
+          // New multiple products format
+          productsToCreate = newProducts;
+        } else if (newProduct && newProduct.name && newProduct.type && newProduct.weight) {
+          // Legacy single product format for backward compatibility
+          productsToCreate = [newProduct];
+        } else {
+          throw new Error('At least one product with Name, Type, and Weight is required for new gold repurchase.');
+        }
+
+        // Validate all products
+        for (const product of productsToCreate) {
+          if (!product.name || !product.type || !product.weight) {
+            throw new Error('Each product must have Name, Type, and Weight for new gold repurchase.');
+          }
         }
         
-        console.log('Creating product with data:', newProduct);
+        console.log('Creating products with data:', productsToCreate);
         
-        const createdProduct = await prisma.tb_Product.create({
+        // Create all products
+        const createdProductIds = [];
+        for (const product of productsToCreate) {
+          const createdProduct = await prisma.tb_Product.create({
+            data: {
+              Pd_name: product.name,
+              Type: product.type,
+              Weight: parseFloat(product.weight) || 0,
+              Pattern_value: 0, // External products don't have pattern value
+              status: ProductStatus.REPURCHASED,
+              condition: parsedDamageCost > 0 ? 'NEEDS_REPAIR' : 'GOOD', // Set condition based on damage cost
+            },
+          });
+          
+          console.log('Created product:', createdProduct);
+          createdProductIds.push(createdProduct.Pd_ID);
+        }
+        
+        productsToRepurchaseIds = createdProductIds;
+      }
+
+      // Create new customer if provided
+      if (type === 'new' && newCustomer) {
+        console.log('Creating new customer:', newCustomer);
+        
+        const createdCustomer = await prisma.tb_Customer.create({
           data: {
-            Pd_name: newProduct.name,
-            Type: newProduct.type,
-            Weight: parseFloat(newProduct.weight) || 0,
-            Pattern_value: 0, // External products don't have pattern value
-            status: ProductStatus.REPURCHASED,
-            condition: parsedDamageCost > 0 ? 'NEEDS_REPAIR' : 'GOOD', // Set condition based on damage cost
+            // ไม่ส่ง Cust_ID ให้ Database สร้าง Auto-increment เอง
+            Cust_name: newCustomer.name,
+            Phone: newCustomer.phone || '',
+            Address: newCustomer.address || '',
           },
         });
         
-        console.log('Created product:', createdProduct);
-        productsToRepurchaseIds = [createdProduct.Pd_ID];
+        customerIdToUse = createdCustomer.Cust_ID;
+        console.log('Created customer with ID:', customerIdToUse);
       }
 
       // Create the repurchase record

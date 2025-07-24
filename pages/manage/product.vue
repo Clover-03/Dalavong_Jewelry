@@ -10,8 +10,8 @@
 
     <!-- Summary Statistics -->
     <div class="summary-section mb-6">
-      <v-row>
-        <v-col cols="12" md="4">
+            <v-row>
+        <v-col cols="12" md="6">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#365a76">mdi-diamond-stone</v-icon>
@@ -22,7 +22,7 @@
             </div>
           </div>
         </v-col>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#10b981">mdi-check-circle</v-icon>
@@ -30,17 +30,6 @@
             <div class="stat-content">
               <h3 class="stat-number">{{ availableCount }}</h3>
               <p class="stat-label">ພ້ອມຂາຍ</p>
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="4">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <v-icon size="32" color="#8b5cf6">mdi-file-document-plus</v-icon>
-            </div>
-            <div class="stat-content">
-              <h3 class="stat-number">{{ filteredProducts.length }}</h3>
-              <p class="stat-label">ຜົນການຄົ້ນຫາ</p>
             </div>
           </div>
         </v-col>
@@ -883,6 +872,11 @@ const weightOptions = [
   { text: "45.48g (3 ບາດ)", value: 45.48 },
   { text: "60.64g (4 ບາດ)", value: 60.64 },
   { text: "75.80g (5 ບາດ)", value: 75.80 },
+  { text: "91.00g (6 ບາດ)", value: 91.00 },
+  { text: "106.12g (7 ບາດ)", value: 106.12 },
+  { text: "121.28g (8 ບາດ)", value: 121.28 },
+  { text: "136.44g (9 ບາດ)", value: 136.44 },
+  { text: "151.60g (10 ບາດ)", value: 151.60 },
 ];
 
 // Statistics computed properties

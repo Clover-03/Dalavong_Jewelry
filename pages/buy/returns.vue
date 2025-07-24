@@ -41,7 +41,7 @@
                 </div>
                 <div class="stat-content">
                   <h3 class="stat-number">{{ formatCurrency(totalValue) }}</h3>
-                  <p class="stat-label">ມູນຄ່າລວມ</p>
+                  <p class="stat-label">ມູນຄ່າສຸດທິ</p>
                 </div>
               </div>
             </v-col>
@@ -404,27 +404,84 @@
                     
                     <!-- Manual Product Entry -->
                     <div v-else-if="addFormData.repurchaseType === 'new'">
-                      <v-text-field
-                        v-model="addFormData.newProduct.name"
-                        label="ຊື່ສິນຄ້າ"
-                        :rules="addFormData.repurchaseType === 'new' ? [rules.required] : []"
-                        variant="outlined"
-                        class="mb-3"
-                      />
-                      <v-text-field
-                        v-model="addFormData.newProduct.type"
-                        label="ປະເພດສິນຄ້າ"
-                        variant="outlined"
-                        class="mb-3"
-                      />
-                      <v-text-field
-                        v-model.number="addFormData.newProduct.weight"
-                        label="ນ້ຳໜັກ (ກຣາມ)"
-                        type="number"
-                        :rules="addFormData.repurchaseType === 'new' ? [rules.required, rules.positive] : []"
-                        variant="outlined"
-                        step="0.01"
-                      />
+                                              <div class="products-header mb-3">
+                          <h4>ລາຍການສິນຄ້າທີ່ຊື້ຄືນ</h4>
+                          <v-btn
+                            color="primary"
+                            variant="outlined"
+                            size="small"
+                            prepend-icon="mdi-plus"
+                            @click="addNewProduct"
+                          >
+                            ເພີ່ມສິນຄ້າ
+                          </v-btn>
+                        </div>
+                      
+                      <div class="products-list">
+                        <v-card
+                          v-for="(product, index) in addFormData.newProducts"
+                          :key="index"
+                          variant="outlined"
+                          class="product-card mb-3"
+                        >
+                          <v-card-title class="product-card-header">
+                            <span>ສິນຄ້າທີ່ {{ index + 1 }}</span>
+                            <v-btn
+                              v-if="addFormData.newProducts.length > 1"
+                              icon="mdi-close"
+                              size="small"
+                              variant="text"
+                              color="error"
+                              @click="removeProduct(index)"
+                            />
+                          </v-card-title>
+                          <v-card-text>
+                            <v-row>
+                              <v-col cols="12" md="4">
+                                <v-text-field
+                                  v-model="product.name"
+                                  label="ຊື່ສິນຄ້າ"
+                                  :rules="addFormData.repurchaseType === 'new' ? [rules.required] : []"
+                                  variant="outlined"
+                                  density="comfortable"
+                                />
+                              </v-col>
+                              <v-col cols="12" md="4">
+                                <v-text-field
+                                  v-model="product.type"
+                                  label="ປະເພດສິນຄ້າ"
+                                  variant="outlined"
+                                  density="comfortable"
+                                />
+                              </v-col>
+                              <v-col cols="12" md="4">
+                                <v-text-field
+                                  v-model.number="product.weight"
+                                  label="ນ້ຳໜັກ (ກຣາມ)"
+                                  type="number"
+                                  :rules="addFormData.repurchaseType === 'new' ? [rules.required, rules.positive] : []"
+                                  variant="outlined"
+                                  step="0.01"
+                                  density="comfortable"
+                                />
+                              </v-col>
+                            </v-row>
+                          </v-card-text>
+                        </v-card>
+                        
+                        <div v-if="addFormData.newProducts.length === 0" class="text-center py-4">
+                          <v-icon size="48" color="grey-lighten-2">mdi-package-variant-plus</v-icon>
+                          <p class="mt-2 text-grey">ກະລຸນາເພີ່ມສິນຄ້າທີ່ຕ້ອງການຊື້ຄືນ</p>
+                          <v-btn
+                            color="primary"
+                            variant="outlined"
+                            prepend-icon="mdi-plus"
+                            @click="addNewProduct"
+                          >
+                            ເພີ່ມສິນຄ້າ
+                          </v-btn>
+                        </div>
+                      </div>
                     </div>
                   </v-card-text>
                 </v-card>
@@ -776,11 +833,7 @@ const addFormData = ref({
     phone: '',
     address: ''
   },
-  newProduct: {
-    name: '',
-    type: '',
-    weight: ''
-  },
+  newProducts: [],
   repurchasePrice: '',
   damageCost: '',
   lostWeightFee: '',
@@ -832,17 +885,36 @@ const rules = {
 // Computed Statistics
 const thisMonthCount = computed(() => {
   const currentMonth = new Date().getMonth();
-  return repurchases.value.filter(item => 
-    new Date(item.Re_date).getMonth() === currentMonth
-  ).length;
+  const currentYear = new Date().getFullYear();
+  return repurchases.value.filter(item => {
+    const itemDate = new Date(item.Re_date);
+    return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+  }).length;
 });
 
 const totalValue = computed(() => 
-  repurchases.value.reduce((sum, item) => sum + (item.Net_Repurchase_Price || 0), 0)
+  filteredRepurchases.value.reduce((sum, item) => {
+    // ใช้ราคาสุทธิจาก backend ก่อน ถ้าไม่มีค่อยคำนวณใหม่
+    let netPrice = Number(item.Net_Repurchase_Price || 0);
+    
+    // ถ้าไม่มี Net_Repurchase_Price หรือเป็น 0 ให้คำนวณใหม่
+    if (!netPrice || netPrice === 0) {
+      const repurchasePrice = Number(item.Repurchase_Price || 0);
+      const damageCost = Number(item.Damage_Cost || 0);
+      const looseGoldCost = Number(item.Loose_Gold_Cost || 0);
+      netPrice = repurchasePrice - damageCost - looseGoldCost;
+    }
+    
+    return sum + (netPrice >= 0 ? netPrice : 0);
+  }, 0)
+);
+
+const totalOriginalValue = computed(() => 
+  filteredRepurchases.value.reduce((sum, item) => sum + (Number(item.Repurchase_Price) || 0), 0)
 );
 
 const totalDeductions = computed(() => 
-  repurchases.value.reduce((sum, item) => {
+  filteredRepurchases.value.reduce((sum, item) => {
     const damage = Number(item.Damage_Cost || 0);
     const loose = Number(item.Loose_Gold_Cost || 0);
     return sum + damage + loose;
@@ -1011,11 +1083,7 @@ const resetAddForm = () => {
       phone: '',
       address: ''
     },
-    newProduct: {
-      name: '',
-      type: '',
-      weight: ''
-    },
+    newProducts: [],
     repurchasePrice: '',
     damageCost: '',
     lostWeightFee: '',
@@ -1036,6 +1104,31 @@ const saveAdd = async () => {
     return;
   }
 
+  // Additional validation for new products
+  if (addFormData.value.repurchaseType === 'new') {
+    if (!addFormData.value.newProducts || addFormData.value.newProducts.length === 0) {
+      showSnackbar('ກະລຸນາເພີ່ມຢ່າງໜ້ອຍ 1 ສິນຄ້າ', 'error');
+      return;
+    }
+    
+    // Check if all products have required fields
+    for (let i = 0; i < addFormData.value.newProducts.length; i++) {
+      const product = addFormData.value.newProducts[i];
+      if (!product.name || !product.name.trim()) {
+        showSnackbar(`ກະລຸນາປ້ອນຊື່ສິນຄ້າທີ່ ${i + 1}`, 'error');
+        return;
+      }
+      if (!product.weight || product.weight <= 0) {
+        showSnackbar(`ກະລຸນາປ້ອນນ້ຳໜັກສິນຄ້າທີ່ ${i + 1} ໃຫ້ຖືກຕ້ອງ`, 'error');
+        return;
+      }
+      // Type is optional, but if provided should not be empty
+      if (product.type && !product.type.trim()) {
+        product.type = 'ສິນຄ້າພາຍນອກ'; // Set default if empty
+      }
+    }
+  }
+
   loading.value.saving = true;
   try {
     let payload;
@@ -1053,19 +1146,18 @@ const saveAdd = async () => {
         type: 'existingProduct'
       };
     } else {
-      // New customer (external gold) - ส่งข้อมูลลูกค้าใหม่ไปให้ repurchase API จัดการ
-      // ไม่ต้องสร้างลูกค้าแยกเพื่อป้องกันการซ้ำซ้อน
+      // New customer (external gold) - ส่งข้อมูลลูกค้าใหม่และสินค้าหลายชิ้น
       payload = {
         newCustomer: {
           name: addFormData.value.newCustomer.name,
           phone: addFormData.value.newCustomer.phone,
           address: addFormData.value.newCustomer.address
         },
-        newProduct: {
-          name: addFormData.value.newProduct.name,
-          type: addFormData.value.newProduct.type,
-          weight: addFormData.value.newProduct.weight
-        },
+        newProducts: addFormData.value.newProducts.map(product => ({
+          name: product.name,
+          type: product.type || 'ສິນຄ້າພາຍນອກ',
+          weight: product.weight
+        })),
         repurchasePrice: addFormData.value.repurchasePrice,
         damageCost: addFormData.value.damageCost,
         lostWeightFee: addFormData.value.lostWeightFee,
@@ -1276,8 +1368,13 @@ watch(() => addFormData.value.repurchaseType, (newType) => {
     addFormData.value.custId = null;
     addFormData.value.productIds = [];
     addFormData.value.newCustomer = { name: '', phone: '', address: '' };
-    addFormData.value.newProduct = { name: '', type: '', weight: '' };
+    addFormData.value.newProducts = [];
     availableProducts.value = [];
+  }
+  
+  // Auto-add first product for new customer type
+  if (newType === 'new' && addFormData.value.newProducts.length === 0) {
+    addNewProduct();
   }
 });
 
@@ -1314,6 +1411,20 @@ const getNetPriceColor = (item) => {
     // Large deductions - red (attention needed)
     return 'error';
   }
+};
+
+// Add New Product for external customers
+const addNewProduct = () => {
+  addFormData.value.newProducts.push({
+    name: '',
+    type: '',
+    weight: ''
+  });
+};
+
+// Remove Product from list
+const removeProduct = (index) => {
+  addFormData.value.newProducts.splice(index, 1);
 };
 </script>
 
@@ -1876,6 +1987,111 @@ const getNetPriceColor = (item) => {
   .net-price-chip {
     min-width: 100px;
     font-size: 0.8rem;
+  }
+}
+
+/* New Product Management */
+.products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.products-header h4 {
+  margin: 0;
+  color: #365a76;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.product-card {
+  border: 2px solid rgba(54, 90, 118, 0.1) !important;
+  transition: all 0.2s ease;
+}
+
+.product-card:hover {
+  border-color: rgba(54, 90, 118, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(54, 90, 118, 0.15) !important;
+}
+
+.product-card-header {
+  background: linear-gradient(135deg, rgba(54, 90, 118, 0.05) 0%, rgba(54, 90, 118, 0.02) 100%);
+  color: #365a76 !important;
+  font-weight: 600 !important;
+  padding: 12px 16px !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-card-header span {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.product-card .v-card-text {
+  padding: 16px !important;
+}
+
+/* Empty state for products */
+.products-list .text-center {
+  background: rgba(54, 90, 118, 0.02);
+  border: 2px dashed rgba(54, 90, 118, 0.2);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.products-list .text-grey {
+  color: #666 !important;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+/* Dark mode support for new elements */
+.v-theme--dark .products-header h4 {
+  color: #64b5f6 !important;
+}
+
+.v-theme--dark .product-card {
+  background: #2a2a2a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-theme--dark .product-card:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.v-theme--dark .product-card-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #64b5f6 !important;
+}
+
+.v-theme--dark .products-list .text-center {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.v-theme--dark .products-list .text-grey {
+  color: #aaa !important;
+}
+
+/* Responsive for product cards */
+@media (max-width: 768px) {
+  .products-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .products-header h4 {
+    text-align: center;
+  }
+  
+  .product-card-header {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
   }
 }
 </style> 

@@ -47,11 +47,11 @@
         <v-col cols="12" md="3">
           <div class="stat-card">
             <div class="stat-icon">
-              <v-icon size="32" color="#8b5cf6">mdi-cash-multiple</v-icon>
+              <v-icon size="32" color="#e53e3e">mdi-close-circle</v-icon>
             </div>
             <div class="stat-content">
-              <h3 class="stat-number">{{ formatCurrency(totalValue) }}</h3>
-              <p class="stat-label">ມູນຄ່າລວມ</p>
+              <h3 class="stat-number">{{ cancelledDeliveries }}</h3>
+              <p class="stat-label">ຍົກເລີກ</p>
             </div>
           </div>
         </v-col>
@@ -135,38 +135,42 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>ID ໃບນຳສົ່ງ</th>
-            <th>ID ອໍເດີ</th>
+            <th>ID ຄຳສັ່ງ</th>
             <th>ຜູ້ສະໜອງ</th>
-            <th>ວັນທີຮັບ</th>
-            <th class="text-right">ຍອດລວມ</th>
+            <th>ວັນທີສັ່ງ</th>
+            <th>ຈຳນວນລາຍການ</th>
+            <th class="text-right">ມູນຄ່າລວມ</th>
             <th>ສະຖານະ</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in paginatedInvoices" :key="item.Inv_ID">
+          <tr v-for="(item, index) in paginatedOrders" :key="item.Order_ID">
             <td>{{ (page - 1) * itemsPerPage + index + 1 }}</td>
             <td>
               <v-chip color="#365a76" variant="flat" size="small">
-                {{ item.Inv_ID }}
+                #{{ item.Order_ID }}
               </v-chip>
             </td>
-            <td>{{ item.Order_ID }}</td>
-            <td>{{ item.Sup_name }}</td>
-            <td>{{ formatDate(item.Inv_Date) }}</td>
-            <td class="text-right">{{ formatCurrency(item.Total_Price) }}</td>
+            <td>{{ item.Tb_Supplier?.Sup_name || 'ບໍ່ລະບຸ' }}</td>
+            <td>{{ formatDate(item.Order_Date) }}</td>
+            <td class="text-center">
+              <v-chip color="info" variant="tonal" size="small">
+                {{ item.products?.length || 0 }} ລາຍການ
+              </v-chip>
+            </td>
+            <td class="text-right">{{ formatCurrency(calculateOrderTotal(item)) }}</td>
             <td>
               <v-chip 
-                :color="getStatusColor(item.Status)" 
+                :color="getStatusColor(item.status)" 
                 variant="flat" 
                 size="small"
               >
-                {{ item.Status }}
+                {{ item.status }}
               </v-chip>
             </td>
           </tr>
         </tbody>
-        <tfoot v-if="filteredInvoices.length > 0">
+        <tfoot v-if="filteredOrders.length > 0">
           <tr class="total-row">
             <td :colspan="5" class="text-right font-weight-bold">ລວມທັງໝົດ:</td>
             <td class="text-right font-weight-bold">{{ formatCurrency(totalValue) }}</td>
@@ -176,18 +180,18 @@
       </v-table>
 
       <!-- Modern Pagination -->
-      <div v-if="!isLoading && filteredInvoices.length > 0" class="pagination-container mt-6">
+      <div v-if="!isLoading && filteredOrders.length > 0" class="pagination-container mt-6">
         <div class="pagination-card">
           <div class="pagination-content">
             <div class="pagination-info">
               <span class="info-text">
-                ສະແດງ {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, filteredInvoices.length) }} ຈາກ {{ filteredInvoices.length }} ລາຍການ
+                ສະແດງ {{ (page - 1) * itemsPerPage + 1 }}-{{ Math.min(page * itemsPerPage, filteredOrders.length) }} ຈາກ {{ filteredOrders.length }} ລາຍການ
               </span>
             </div>
             <div class="pagination-controls">
               <v-pagination
                 v-model="page"
-                :length="Math.ceil(filteredInvoices.length / itemsPerPage)"
+                :length="Math.ceil(filteredOrders.length / itemsPerPage)"
                 :total-visible="5"
                 density="comfortable"
               />
@@ -209,7 +213,7 @@
       </div>
 
       <!-- Empty State -->
-      <div v-if="!isLoading && filteredInvoices.length === 0" class="text-center py-10">
+      <div v-if="!isLoading && filteredOrders.length === 0" class="text-center py-10">
         <v-icon size="64" color="grey-lighten-2">mdi-truck-off-outline</v-icon>
         <p class="mt-4 text-h6 text-grey-lighten-1">ບໍ່ມີຂໍ້ມູນການນຳສົ່ງ</p>
       </div>
@@ -240,7 +244,7 @@ const endDate = ref('');
 const page = ref(1);
 const itemsPerPage = ref(10);
 
-const invoices = ref([]);
+const orders = ref([]);
 
 const statusOptions = [
   { label: 'ທັງໝົດ', value: '' },
@@ -249,22 +253,22 @@ const statusOptions = [
   { label: 'Cancelled', value: 'Cancelled' }
 ];
 
-const loadInvoices = async () => {
+const loadOrders = async () => {
   isLoading.value = true;
   try {
-    const response = await api.get('/public/invoices');
+    const response = await api.get('/orders');
     
-    // Handle public API response structure
-    if (response && response.success && Array.isArray(response.data)) {
-      invoices.value = response.data;
+    // Handle API response structure
+    if (response && response.orders) {
+      orders.value = response.orders;
     } else if (Array.isArray(response)) {
-      invoices.value = response;
+      orders.value = response;
     } else {
-      invoices.value = [];
+      orders.value = [];
     }
     
   } catch (error) {
-    console.error("Error fetching invoices:", error);
+    console.error("Error fetching orders:", error);
     snackbar.value = {
       show: true,
       message: 'ເກີດຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ',
@@ -275,49 +279,63 @@ const loadInvoices = async () => {
   }
 };
 
-const filteredInvoices = computed(() => {
-  let filtered = invoices.value;
+const filteredOrders = computed(() => {
+  let filtered = orders.value;
   
   // Filter by search
   if (search.value) {
     const searchTerm = search.value.toLowerCase();
-    filtered = filtered.filter(inv =>
-      (inv.Sup_name?.toLowerCase().includes(searchTerm)) ||
-      (inv.Inv_ID?.toString().includes(searchTerm))
+    filtered = filtered.filter(order =>
+      (order.Tb_Supplier?.Sup_name?.toLowerCase().includes(searchTerm)) ||
+      (order.Order_ID?.toString().includes(searchTerm))
     );
   }
   
   // Filter by status
   if (statusFilter.value) {
-    filtered = filtered.filter(inv => inv.Status === statusFilter.value);
+    filtered = filtered.filter(order => order.status === statusFilter.value);
   }
   
   // Filter by date range
   if (startDate.value) {
-    filtered = filtered.filter(inv => new Date(inv.Inv_Date) >= new Date(startDate.value));
+    filtered = filtered.filter(order => new Date(order.Order_Date) >= new Date(startDate.value));
   }
   if (endDate.value) {
-    filtered = filtered.filter(inv => new Date(inv.Inv_Date) <= new Date(endDate.value));
+    filtered = filtered.filter(order => new Date(order.Order_Date) <= new Date(endDate.value));
   }
   
   return filtered;
 });
 
-const paginatedInvoices = computed(() => {
+const paginatedOrders = computed(() => {
   const start = (page.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
-  return filteredInvoices.value.slice(start, end);
+  return filteredOrders.value.slice(start, end);
 });
 
 // Computed statistics
-const totalDeliveries = computed(() => invoices.value.length);
-const completedDeliveries = computed(() => invoices.value.filter(inv => inv.Status === 'Completed').length);
-const pendingDeliveries = computed(() => invoices.value.filter(inv => inv.Status === 'Pending').length);
-const totalValue = computed(() => invoices.value.reduce((sum, inv) => sum + (inv.Total_Price || 0), 0));
+const totalDeliveries = computed(() => orders.value.length);
+const completedDeliveries = computed(() => orders.value.filter(order => order.status === 'Completed').length);
+const pendingDeliveries = computed(() => orders.value.filter(order => order.status === 'Pending').length);
+const cancelledDeliveries = computed(() => orders.value.filter(order => order.status === 'Cancelled').length);
+
+const totalValue = computed(() => {
+  return filteredOrders.value.reduce((sum, order) => sum + calculateOrderTotal(order), 0);
+});
 
 watch([search, statusFilter, startDate, endDate], () => {
   page.value = 1;
 });
+
+const calculateOrderTotal = (order) => {
+  if (!order.products || !Array.isArray(order.products)) return 0;
+  return order.products.reduce((sum, product) => {
+    const price = product.buyPrice || 0;
+    const quantity = product.quantity || 1;
+    const discount = product.discount || 0;
+    return sum + (price * quantity) - discount;
+  }, 0);
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -340,14 +358,14 @@ const getStatusColor = (status) => {
 
 const exportToExcel = () => {
   try {
-    const dataToExport = filteredInvoices.value.map((item, index) => ({
+    const dataToExport = filteredOrders.value.map((item, index) => ({
       'ລຳດັບ': index + 1,
-      'ID ໃບນຳສົ່ງ': item.Inv_ID,
-      'ID ອໍເດີ': item.Order_ID,
-      'ຜູ້ສະໜອງ': item.Sup_name,
-      'ວັນທີຮັບ': formatDate(item.Inv_Date),
-      'ຍອດລວມ': item.Total_Price,
-      'ສະຖານະ': item.Status,
+      'ID ຄຳສັ່ງ': item.Order_ID,
+      'ຜູ້ສະໜອງ': item.Tb_Supplier?.Sup_name || 'ບໍ່ລະບຸ',
+      'ວັນທີສັ່ງ': formatDate(item.Order_Date),
+      'ຈຳນວນລາຍການ': item.products?.length || 0,
+      'ມູນຄ່າລວມ': calculateOrderTotal(item),
+      'ສະຖານະ': item.status,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -369,7 +387,7 @@ const exportToExcel = () => {
   }
 };
 
-onMounted(loadInvoices);
+onMounted(loadOrders);
 </script>
 
 <style scoped>

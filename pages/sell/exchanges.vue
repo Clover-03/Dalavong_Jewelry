@@ -303,7 +303,7 @@
               <v-card class="mb-4" elevation="2">
                 <v-card-subtitle class="pb-2 text-warning font-weight-bold">ຂໍ້ມູນສິນຄ້າເກົ່າ (ຮັບຄືນ)</v-card-subtitle>
                 <v-card-text class="pt-0">
-                  <!-- แถวที่ 1: ชื่อสินค้า, ประเภท, น้ำหนัก -->
+                  <!-- ແຖວທີ່ 1: ຊື່ສິນຄ້າ, ປະເພດ, ນ້ຳໜັກ -->
                   <v-row>
                     <v-col cols="12" md="5">
                  <v-text-field
@@ -340,7 +340,7 @@
               </v-col>
                   </v-row>
                   
-                  <!-- แถวที่ 2: สภาพสินค้า, ราคารับซื้อคืน -->
+                  <!-- ແຖວທີ່ 2: ສະພາບສິນຄ້າ, ລາຄາຮັບຊື້ຄືນ -->
                   <v-row>
                     <v-col cols="12" md="6">
                 <v-select
@@ -567,21 +567,21 @@
                 <span>ສິນຄ້າເກົ່າ (ຮັບຄືນ)</span>
               </div>
               <div class="product-info">
-                <p class="product-name">{{ selectedExchange.Old_Product?.Pd_name || selectedExchange.Old_Pd_Description || 'N/A' }}</p>
+                <p class="product-name">{{ getOldProductDisplayName() }}</p>
                 <div class="product-details">
-                  <span>{{ formatWeight(selectedExchange.Old_Product?.Weight || selectedExchange.Old_Pd_Actual_Weight) }}</span>
+                  <span>{{ getOldProductDisplayWeight() }}</span>
                   <span class="divider">•</span>
-                  <span>{{ selectedExchange.Old_Product?.Type || selectedExchange.Old_Pd_Type || 'N/A' }}</span>
+                  <span>{{ getOldProductDisplayType() }}</span>
                   <span class="divider">•</span>
                   <span>{{ formatCurrency(selectedExchange.Old_Product_Value) }}</span>
                 </div>
-                <div class="product-condition" v-if="selectedExchange.Old_Product?.condition">
+                <div class="product-condition" v-if="selectedExchange.Old_Product?.condition || selectedExchange.Old_Product_Condition">
                   <v-chip 
-                    :color="getConditionColor(selectedExchange.Old_Product.condition)" 
+                    :color="getConditionColor(selectedExchange.Old_Product?.condition || selectedExchange.Old_Product_Condition)" 
                     size="small" 
                     variant="flat"
                   >
-                    {{ getConditionText(selectedExchange.Old_Product.condition) }}
+                    {{ getConditionText(selectedExchange.Old_Product?.condition || selectedExchange.Old_Product_Condition) }}
                   </v-chip>
                 </div>
               </div>
@@ -1300,6 +1300,39 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+const getOldProductDisplayName = () => {
+  if (!selectedExchange.value) return 'N/A';
+  return selectedExchange.value.Old_Product?.Pd_name || selectedExchange.value.Old_Pd_Description || 'N/A';
+};
+
+const getOldProductDisplayWeight = () => {
+  if (!selectedExchange.value) return '0 ກຣາມ';
+  
+  const weight = selectedExchange.value.Old_Product?.Weight || selectedExchange.value.Old_Pd_Actual_Weight;
+  let parsedWeight = 0;
+  
+  if (typeof weight === 'string') {
+    parsedWeight = parseFloat(weight) || 0;
+  } else if (typeof weight === 'number') {
+    parsedWeight = weight;
+  }
+  
+  return formatWeight(parsedWeight);
+};
+
+const getOldProductDisplayType = () => {
+  if (!selectedExchange.value) return 'N/A';
+  
+  const type = selectedExchange.value.Old_Product?.Type || selectedExchange.value.Old_Pd_Type;
+  
+  // If type is empty string or null, return default
+  if (!type || type.trim() === '') {
+    return 'ສິນຄ້າແລກປ່ຽນ';
+  }
+  
+  return type;
+};
 </script>
 
 <style scoped>

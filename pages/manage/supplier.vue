@@ -10,8 +10,8 @@
 
     <!-- Summary Statistics -->
     <div class="summary-section mb-6">
-      <v-row>
-        <v-col cols="12" md="4">
+            <v-row>
+        <v-col cols="12" md="6">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#365a76">mdi-truck</v-icon>
@@ -22,18 +22,7 @@
             </div>
           </div>
         </v-col>
-        <v-col cols="12" md="4">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <v-icon size="32" color="#10b981">mdi-truck-check</v-icon>
-            </div>
-            <div class="stat-content">
-              <h3 class="stat-number">{{ filteredSuppliers.length }}</h3>
-              <p class="stat-label">ຜົນການຄົ້ນຫາ</p>
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <div class="stat-card">
             <div class="stat-icon">
               <v-icon size="32" color="#f59e0b">mdi-file-document-plus</v-icon>

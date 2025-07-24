@@ -65,6 +65,7 @@ exports.createCustomer = async (req, res) => {
 
     const newCustomer = await prisma.tb_Customer.create({
       data: { 
+        // ไม่ส่ง Cust_ID ให้ Database สร้าง Auto-increment เอง
         Cust_name, 
         Phone, 
         Address: Address || null
